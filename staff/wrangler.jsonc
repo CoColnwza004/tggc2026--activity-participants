@@ -1,0 +1,12 @@
+{
+  // staff site · deploy: npx wrangler deploy -c staff/wrangler.jsonc   (or: npm run deploy)
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "tggc2569-activity-staff",
+  "main": "worker.js",
+  "compatibility_date": "2025-06-01",
+  // static files are served by Cloudflare directly (free, cached at the edge); only /api/* runs the Worker
+  "assets": { "directory": "../dist/staff", "binding": "ASSETS" },
+  // both sites share ONE D1 database — put the same database_id in participant/ and staff/ wrangler.jsonc
+  "d1_databases": [{ "binding": "DB", "database_name": "tggc2569-activity", "database_id": "00000000-0000-0000-0000-000000000000" }],
+  "observability": { "enabled": true }
+}

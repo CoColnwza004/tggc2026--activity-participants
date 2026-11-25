@@ -1,0 +1,16 @@
+{
+  "name": "สะสมตรา ลุ้นรางวัล · TGGC 2569",
+  "short_name": "TGGC สะสมตรา",
+  "description": "สมุดสะสมตราบูธกิจกรรม TGGC 2569 พร้อมสูจิบัตรและผังงาน",
+  "lang": "th",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#e9f6f8",
+  "theme_color": "#042c4a",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

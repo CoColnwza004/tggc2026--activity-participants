@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>สะสมตรา ลุ้นรางวัล · TGGC 2569</title>
+<meta name="description" content="สมุดสะสมตราบูธกิจกรรม TGGC 2569 · ร่วมกิจกรรมครบทุกบูธ รับตราน้องจีออส แล้วไปลุ้นของรางวัล พร้อมสูจิบัตร กำหนดการ และผังงาน">
+<meta name="theme-color" content="#042c4a">
+<meta property="og:title" content="ตะลุยบูธ สะสมตรา ลุ้นรางวัล · TGGC 2569">
+<meta property="og:description" content="ร่วมกิจกรรมครบทุกบูธ รับตราประทับน้องจีออส แล้วไปลุ้นของรางวัล · เสาร์ 28 พ.ย. 2569 โรงเรียนชลประทานวิทยา">
+<meta property="og:image" content="assets/og.jpg">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/png" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="image" href="assets/geos.webp" fetchpriority="high">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600&family=Chakra+Petch:wght@600;700&family=Kanit:wght@500;700;800&display=swap">
+<!--CSS-->
+</head>
+<body>
+<div class="ambient" aria-hidden="true"><i class="marks"></i><i class="breeze"></i><i class="breeze b2"></i></div>
+
+<header class="topbar">
+  <a class="brand" href="#/" aria-label="TGGC 2026 หน้าแรก"><img src="assets/logo-full.webp" alt="TGGC 2026" width="480" height="328"></a>
+  <span class="tb-title" id="tbTitle"></span>
+  <span class="spacer"></span>
+  <button class="icon-btn" id="soundBtn" type="button" aria-label="ปิดเสียง"></button>
+  <a class="tb-pass" id="tbPass" href="#/passport" hidden><i class="tb-ring"></i><b id="tbCount">0/6</b></a>
+</header>
+
+<main class="app" id="app">
+
+<!-- ================= HOME ================= -->
+<section class="view" data-view="home">
+  <section class="hero">
+    <div class="hero-sky" aria-hidden="true"><i class="aur a1"></i><i class="aur a2"></i><i class="aur a3"></i><i class="stars"></i><i class="stars s2"></i></div>
+    <div class="hero-stage">
+      <span class="hero-tag">ACTIVITY PASSPORT · 13.9°N 100.5°E</span>
+      <canvas class="hero-globe" id="heroGlobe" aria-hidden="true"></canvas>
+      <img class="hero-geos" src="assets/geos.webp" alt="น้องจีออส (GeoS) มาสคอต TGGC 2026" width="348" height="408" fetchpriority="high" decoding="async">
+      <span class="bubble" id="heroBubble">มาตะลุยบูธกัน!</span>
+    </div>
+    <div class="hero-copy">
+      <span class="hero-chip"><i class="live-dot"></i><span id="heroDate"></span></span>
+      <h1><span class="l1">ตะลุยบูธ</span><span class="l2">สะสมตรา</span><span class="l3">ลุ้นรางวัล!</span></h1>
+      <p class="hero-lede" id="heroLede"></p>
+      <a class="cta" id="heroCta" href="#/join"><span>เปิดสมุดสะสมตรา</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+  </section>
+
+  <section class="progress-card" id="homeProgress" hidden></section>
+
+  <section class="now-card" id="nowCard"></section>
+
+  <div class="sec-title"><h2>ร่วมสนุกง่าย ๆ 3 ขั้น</h2></div>
+  <ol class="howto">
+    <li><span class="hw-ico">1</span><div><b>เข้าร่วมกิจกรรมที่บูธ</b><small id="howBooths"></small></div></li>
+    <li><span class="hw-ico">2</span><div><b>สแกน QR รับตราประทับ</b><small>QR บนจอของเจ้าหน้าที่บูธ เปลี่ยนทุก 30 วินาที</small></div></li>
+    <li><span class="hw-ico">3</span><div><b>ครบทุกบูธ ไปลุ้นรางวัล!</b><small id="howPrize"></small></div></li>
+  </ol>
+
+  <div class="sec-title"><h2>ของรางวัลรอคุณอยู่</h2><span>ลุ้นได้ 1 ครั้ง / คน</span></div>
+  <div class="prize-rail" id="prizeRail"></div>
+
+  <div class="sec-title"><h2>บูธกิจกรรม</h2><a href="#/program/booths">ดูทั้งหมด →</a></div>
+  <div class="booth-rail" id="boothRail"></div>
+
+  <div class="quick">
+    <a href="#/program" class="q1"><span>${calendar}</span><b>กำหนดการ</b><small>สูจิบัตรงาน</small></a>
+    <a href="#/program/map" class="q2"><span>${map}</span><b>ผังงาน</b><small>หาบูธง่าย ๆ</small></a>
+  </div>
+
+  <footer class="foot">
+    <img src="assets/logo-full.webp" alt="TGGC 2026" width="480" height="328" loading="lazy">
+    <p id="footText"></p>
+  </footer>
+</section>
+
+<!-- ================= JOIN ================= -->
+<section class="view" data-view="join" hidden>
+  <div class="join-hero">
+    <img src="assets/geos-front.webp" alt="" width="118" height="156">
+    <div class="speech"><b>สวัสดี! เราชื่อน้องจีออส</b>มาเปิดสมุดสะสมตรากันเถอะ ใช้เวลาไม่ถึง 1 นาที</div>
+  </div>
+  <form class="join-form card" id="joinForm" novalidate autocomplete="on">
+    <h1>เปิดสมุดสะสมตรา</h1>
+    <div class="field">
+      <label for="jName">ชื่อ-นามสกุล <i>*</i></label>
+      <input class="input" id="jName" name="name" autocomplete="name" maxlength="80" placeholder="เช่น ด.ญ.ภูมิ ใจดี" enterkeyhint="next" required>
+    </div>
+    <div class="field">
+      <label for="jSchool">โรงเรียน / หน่วยงาน</label>
+      <input class="input" id="jSchool" name="school" autocomplete="organization" maxlength="120" placeholder="เช่น ชลประทานวิทยา" enterkeyhint="next">
+    </div>
+    <div class="field">
+      <span class="label" id="jRoleLab">ฉันคือ</span>
+      <div class="chips" role="radiogroup" aria-labelledby="jRoleLab">
+        <label class="chip"><input type="radio" name="role" value="student" checked><span>นักเรียน</span></label>
+        <label class="chip"><input type="radio" name="role" value="teacher"><span>ครู</span></label>
+        <label class="chip"><input type="radio" name="role" value="guest"><span>บุคคลทั่วไป</span></label>
+      </div>
+    </div>
+    <div class="field">
+      <label for="jPhone">เบอร์โทรศัพท์ <i>*</i></label>
+      <input class="input" id="jPhone" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="12" placeholder="08X-XXX-XXXX" enterkeyhint="done" required>
+      <small class="hint">ใช้กู้คืนสมุดเมื่อเปลี่ยนเครื่อง และติดต่อกรณีได้รับรางวัล</small>
+    </div>
+    <div class="hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+    <p class="form-err" id="joinErr" role="alert" hidden></p>
+    <button class="btn big" type="submit" id="joinBtn"><span>เปิดสมุดเลย!</span></button>
+    <p class="fine">เคยเปิดสมุดแล้ว? กรอกชื่อและเบอร์เดิม ระบบจะดึงตราที่สะสมไว้กลับมาให้ · ข้อมูลใช้เพื่อกิจกรรมในงานนี้เท่านั้น</p>
+  </form>
+</section>
+
+<!-- ================= PASSPORT ================= -->
+<section class="view" data-view="passport" hidden>
+  <div class="pp-cover" id="ppCover"></div>
+  <div class="journey" id="journey"></div>
+  <div class="pp-page">
+    <div class="pp-page-head"><b>หน้าตราประทับ</b><span id="ppCount"></span></div>
+    <div class="stamp-grid" id="stampGrid"></div>
+  </div>
+  <div class="pp-done" id="ppDone" hidden></div>
+  <p class="sync-note" id="syncNote" hidden></p>
+</section>
+
+<!-- ================= PRIZE ================= -->
+<section class="view" data-view="prize" hidden>
+  <div id="prizeBody"></div>
+</section>
+
+<!-- ================= PROGRAM ================= -->
+<section class="view" data-view="program" hidden>
+  <div class="prog-head">
+    <span class="eyebrow">สูจิบัตร · EVENT PROGRAM</span>
+    <h1>TGGC ครั้งที่ 3 · 2569</h1>
+    <p id="progTitle"></p>
+  </div>
+  <div class="tabs" role="tablist" id="progTabs">
+    <a role="tab" href="#/program" data-tab="schedule">กำหนดการ</a>
+    <a role="tab" href="#/program/map" data-tab="map">ผังงาน</a>
+    <a role="tab" href="#/program/booths" data-tab="booths">บูธ</a>
+    <a role="tab" href="#/program/geos" data-tab="geos">น้องจีออส</a>
+  </div>
+  <div class="tab-panel" data-panel="schedule"><ol class="timeline" id="timeline"></ol></div>
+  <div class="tab-panel" data-panel="map" hidden><div class="map-card" id="mapCard"></div><ul class="legend" id="mapLegend"></ul></div>
+  <div class="tab-panel" data-panel="booths" hidden><div class="booth-list" id="boothList"></div></div>
+  <div class="tab-panel" data-panel="geos" hidden>
+    <article class="geos-card">
+      <div class="geos-art"><img src="assets/geos.webp" alt="น้องจีออส" width="348" height="408" loading="lazy"></div>
+      <span class="eyebrow">MASCOT · TGGC 2026</span>
+      <h2>น้องจีออส <small>(GeoS)</small></h2>
+      <p class="tagline">“นักสำรวจน้อย ผู้เชื่อมโลกด้วยความรู้และเทคโนโลยี”</p>
+      <div class="geos-facts">
+        <div><b>แรงบันดาลใจ</b><p>รวมพลังของ ‘ภูมิศาสตร์’ ‘ภูมิสารสนเทศ’ และ ‘อนาคตของโลก’ ผ่านสัญลักษณ์ดาวนำทาง ลูกโลก ใบไม้ และสายลม</p></div>
+        <div><b>คาแรคเตอร์</b><p>ขี้สงสัย ช่างสังเกต รักการเรียนรู้ ไม่หยุดค้นหา พร้อมผจญภัยเพื่อเข้าใจโลกอย่างยั่งยืน</p></div>
+      </div>
+      <div class="geos-colors">
+        <div><i style="background:#075f98"></i><b>น้ำเงิน</b><span>สื่อถึงโลก ความรู้ ความน่าเชื่อถือ</span></div>
+        <div><i style="background:#148e64"></i><b>เขียว</b><span>ธรรมชาติ ความยั่งยืน การเติบโต</span></div>
+        <div><i style="background:#2cc394"></i><b>ฟ้าอมเขียว</b><span>เทคโนโลยี นวัตกรรม อนาคต</span></div>
+      </div>
+      <div class="geos-items">
+        <div><span>${star}</span><b>ดาวนำทาง</b><small>สัญลักษณ์แห่งการค้นหาและปัญญา</small></div>
+        <div><span>${globe}</span><b>ลูกโลกและแผนที่</b><small>องค์ความรู้ภูมิศาสตร์และภูมิสารสนเทศ</small></div>
+        <div><span>${compass}</span><b>เข็มทิศ</b><small>การตัดสินใจอย่างมีทิศทางบนพื้นฐานข้อมูล</small></div>
+        <div><span>${leaf}</span><b>ใบไม้และสายลม</b><small>ธรรมชาติและการเปลี่ยนแปลงของโลก</small></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+</main>
+
+<!-- bottom navigation -->
+<nav class="tabbar" id="tabbar" aria-label="เมนูหลัก">
+  <a href="#/" data-nav="home"><span>${home}</span><b>หน้าแรก</b></a>
+  <a href="#/passport" data-nav="passport"><span>${passport}</span><b>สมุดตรา</b></a>
+  <button class="scan-fab" id="scanFab" type="button" aria-label="สแกนรับตรา"><span class="fab-ring"></span><span class="fab-core">${scan}</span><b>สแกน</b></button>
+  <a href="#/program" data-nav="program"><span>${calendar}</span><b>สูจิบัตร</b></a>
+  <a href="#/prize" data-nav="prize"><span>${gift}</span><b>ลุ้นรางวัล</b></a>
+</nav>
+
+<!-- scanner -->
+<div class="scanner" id="scanner" role="dialog" aria-modal="true" aria-labelledby="scTitle" hidden>
+  <video id="scVideo" playsinline muted></video>
+  <div class="sc-shade"><div class="sc-frame"><i></i><i></i><i></i><i></i><span class="sc-line"></span></div></div>
+  <header class="sc-top">
+    <button class="icon-btn glass" id="scClose" type="button" aria-label="ปิด">${close}</button>
+    <div><b id="scTitle">สแกน QR ที่บูธ</b><small id="scSub">หันกล้องไปที่ QR บนจอเจ้าหน้าที่</small></div>
+  </header>
+  <p class="sc-msg" id="scMsg" role="status"></p>
+  <div class="sc-bottom">
+    <button class="btn glass" id="scManualBtn" type="button">${keypad}<span>พิมพ์รหัส 6 หลักแทน</span></button>
+  </div>
+  <form class="sc-manual" id="scManual" hidden>
+    <b>เลือกบูธ แล้วพิมพ์รหัสบนจอเจ้าหน้าที่</b>
+    <div class="booth-pick" id="scBooths"></div>
+    <input class="otp" id="scCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="\d{6}" placeholder="••••••" aria-label="รหัส 6 หลัก">
+    <div class="row">
+      <button class="btn ghost" type="button" id="scBackCam">${camera}<span>กลับไปสแกน</span></button>
+      <button class="btn" type="submit" id="scSubmit"><span>รับตรา</span></button>
+    </div>
+  </form>
+</div>
+
+<!-- stamp celebration -->
+<div class="celebrate" id="celebrate" role="dialog" aria-modal="true" aria-labelledby="ceTitle" hidden>
+  <div class="ce-rays" aria-hidden="true"></div>
+  <div class="ce-card">
+    <div class="ce-paper"><div class="ce-slot" id="ceSlot"></div><i class="ce-splash" aria-hidden="true"></i></div>
+    <b class="ce-kicker" id="ceKicker">ได้รับตราประทับ!</b>
+    <h2 id="ceTitle"></h2>
+    <p id="ceSub"></p>
+    <div class="ce-dots" id="ceDots" aria-hidden="true"></div>
+    <div class="row">
+      <button class="btn ghost" type="button" id="ceMore">สแกนต่อ</button>
+      <button class="btn" type="button" id="ceGo"><span>ดูสมุดสะสมตรา</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- draw sequence -->
+<div class="drawfx" id="drawfx" role="dialog" aria-modal="true" aria-label="ลุ้นรางวัล" hidden>
+  <div class="dx-bg" aria-hidden="true"><i class="stars"></i><i class="stars s2"></i></div>
+  <canvas class="dx-globe" id="dxGlobe" aria-hidden="true"></canvas>
+  <div class="dx-beams" aria-hidden="true"></div>
+  <div class="dx-slot"><span id="dxSlot">กำลังลุ้น…</span></div>
+  <div class="dx-flash" aria-hidden="true"></div>
+  <div class="dx-result" id="dxResult" hidden></div>
+</div>
+
+<!-- bottom sheet -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden>
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet-panel"><button class="sheet-x icon-btn" type="button" data-close aria-label="ปิด">${close}</button><div id="sheetBody"></div></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="demo-flag" id="demoFlag" hidden>โหมดสาธิต · ไม่ได้เชื่อมต่อเซิร์ฟเวอร์</div>
+
+<!--JS-->
+</body>
+</html>

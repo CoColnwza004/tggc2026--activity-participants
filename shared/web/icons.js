@@ -1,0 +1,60 @@
+// Inline SVG icons (24×24, stroke = currentColor). Booth icons double as the badge on each stamp.
+const P = {
+  map: '<path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/>',
+  satellite: '<path d="m13 7 4 4-6 6-4-4z"/><path d="m4.5 9.5 3-3 3 3-3 3zM13.5 18.5l3-3 3 3-3 3z" transform="translate(-1.5 -1.5)"/><path d="M16 4a4 4 0 0 1 4 4M16 1.5A6.5 6.5 0 0 1 22.5 8"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+  drone: '<rect x="9" y="10" width="6" height="4" rx="1.5"/><path d="M9 11 6 8M15 11l3-3M9 13l-3 3M15 13l3 3"/><path d="M3 7h6M15 7h6M3 17h6M15 17h6"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>',
+  leaf: '<path d="M5 19c0-8 5-13 15-14-1 10-6 15-14 15"/><path d="M5 19c3-4 6-7 10-9"/>',
+  mountain: '<path d="m2 20 7-12 4 6 2-3 7 9z"/><path d="m7.5 10.5 1.5 1.5 1.5-1.5"/>',
+  pin: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  star: '<path d="M12 2c.6 4.8 2.2 8.4 8 10-5.8 1.6-7.4 5.2-8 10-.6-4.8-2.2-8.4-8-10 5.8-1.6 7.4-5.2 8-10z"/>',
+  book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21a2 2 0 0 1 2-2h13v2H6"/><path d="M9 7h6"/>',
+  // ui
+  home: '<path d="m3 11 9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
+  passport: '<rect x="5" y="2.5" width="14" height="19" rx="2"/><circle cx="12" cy="10" r="3.5"/><path d="M9 16.5h6"/>',
+  scan: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M4 12h16"/>',
+  qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M17 20h4v-3M14 20v.01"/>',
+  calendar: '<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
+  gift: '<rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v8h14v-8M12 8v13"/><path d="M12 8C10.5 4.5 6.5 4 6.5 6.5S12 8 12 8zm0 0c1.5-3.5 5.5-4 5.5-1.5S12 8 12 8z"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  back: '<path d="M15 5l-7 7 7 7"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  place: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  keypad: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M7 9h.01M11 9h.01M15 9h.01M7 13h.01M11 13h.01M15 13h.01M8 16h8"/>',
+  sound: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
+  mute: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="m17 9 5 6M22 9l-5 6"/>',
+  lock: '<rect x="4.5" y="10.5" width="15" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+  sparkle: '<path d="M12 3c.5 4 2 5.5 6 6-4 .5-5.5 2-6 6-.5-4-2-5.5-6-6 4-.5 5.5-2 6-6zM19 15c.2 1.6.8 2.2 2.4 2.4-1.6.2-2.2.8-2.4 2.4-.2-1.6-.8-2.2-2.4-2.4 1.6-.2 2.2-.8 2.4-2.4z"/>',
+  refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  cloud: '<path d="M7 18a4.5 4.5 0 0 1-.5-9 6 6 0 0 1 11.5 1.5A4 4 0 0 1 17.5 18z"/>',
+  expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  logout: '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
+  camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+};
+
+export const icon = (name, cls = "") =>
+  `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[name] || P.star}</svg>`;
+
+export const iconPath = (name) => P[name] || P.star;
+
+// prize art (doll uses the mascot picture)
+export function prizeArt(art) {
+  if (art === "doll") return `<img class="prize-img" src="assets/geos-front.webp" alt="" width="118" height="156" loading="lazy" decoding="async">`;
+  if (art === "pen")
+    return `<svg class="prize-svg" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="pg1" x1="0" x2="1"><stop offset="0" stop-color="#0a98c7"/><stop offset="1" stop-color="#075f98"/></linearGradient><linearGradient id="pg2" x1="0" x2="1"><stop offset="0" stop-color="#2cc394"/><stop offset="1" stop-color="#148e64"/></linearGradient></defs>
+      <rect x="22" y="70" width="80" height="22" rx="4" fill="#a7d5db" transform="rotate(-18 62 81)"/><g transform="rotate(-18 62 81)" stroke="#075f98" stroke-width="2"><path d="M32 70v8M42 70v5M52 70v8M62 70v5M72 70v8M82 70v5M92 70v8"/></g>
+      <g transform="rotate(38 60 60)"><rect x="52" y="10" width="16" height="70" rx="3" fill="url(#pg1)"/><path d="M52 80h16l-8 18z" fill="#f4d9a8"/><path d="M57.5 92h5l-2.5 6z" fill="#0a2b42"/><rect x="52" y="10" width="16" height="10" rx="3" fill="#2cc394"/></g>
+      <g transform="rotate(-12 60 60)"><rect x="74" y="16" width="12" height="64" rx="6" fill="url(#pg2)"/><rect x="77" y="20" width="3" height="30" rx="1.5" fill="#fff" opacity=".5"/><path d="M74 80h12l-6 14z" fill="#0a2b42"/></g></svg>`;
+  if (art === "fan")
+    return `<svg class="prize-svg spin-fan" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="fg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a98c7"/><stop offset="1" stop-color="#15a8a0"/></linearGradient></defs>
+      <rect x="54" y="66" width="12" height="44" rx="6" fill="#075f98"/><circle cx="60" cy="48" r="38" fill="#e9f6f8" stroke="url(#fg1)" stroke-width="6"/>
+      <g class="blades" fill="#2cc394"><path d="M60 48c-4-14 2-26 10-26 6 0 6 14-10 26z"/><path d="M60 48c14-4 26 2 26 10 0 6-14 6-26-10z"/><path d="M60 48c4 14-2 26-10 26-6 0-6-14 10-26z"/><path d="M60 48c-14 4-26-2-26-10 0-6 14-6 26 10z"/></g>
+      <circle cx="60" cy="48" r="6" fill="#075f98"/><g stroke="#075f98" stroke-opacity=".25" stroke-width="1.5" fill="none"><circle cx="60" cy="48" r="20"/><circle cx="60" cy="48" r="30"/></g></svg>`;
+  return `<svg class="prize-svg" viewBox="0 0 120 120" aria-hidden="true"><rect x="20" y="50" width="80" height="56" rx="8" fill="#2cc394"/><rect x="14" y="36" width="92" height="20" rx="6" fill="#148e64"/><rect x="54" y="36" width="12" height="70" fill="#fcfdfd"/><path d="M60 36c-8-18-30-18-30-4 0 8 18 6 30 4zm0 0c8-18 30-18 30-4 0 8-18 6-30 4z" fill="#0a98c7"/></svg>`;
+}
