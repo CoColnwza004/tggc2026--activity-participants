@@ -147,7 +147,7 @@
     <a role="tab" href="#/program/geos" data-tab="geos">น้องจีออส</a>
   </div>
   <div class="tab-panel" data-panel="schedule"><ol class="timeline" id="timeline"></ol></div>
-  <div class="tab-panel" data-panel="map" hidden><div class="map-card" id="mapCard"></div><ul class="legend" id="mapLegend"></ul></div>
+  <div class="tab-panel" data-panel="map" hidden><div class="map-card" id="mapCard"></div><h3 class="sub-h">รายชื่อบูธ</h3><ul class="legend" id="mapLegend"></ul><h3 class="sub-h">แผนผังโรงเรียน</h3><div id="schoolMap"></div></div>
   <div class="tab-panel" data-panel="booths" hidden><div class="booth-list" id="boothList"></div></div>
   <div class="tab-panel" data-panel="geos" hidden>
     <article class="geos-card">
@@ -198,7 +198,7 @@
     <button class="btn glass" id="scManualBtn" type="button">${keypad}<span>พิมพ์รหัส 6 หลักแทน</span></button>
   </div>
   <form class="sc-manual" id="scManual" hidden>
-    <b>เลือกบูธ แล้วพิมพ์รหัสบนจอเจ้าหน้าที่</b>
+    <b>เลือกหมายเลขบูธ แล้วพิมพ์รหัสบนจอเจ้าหน้าที่</b><small class="picked" id="scPicked">แตะหมายเลขบูธ</small>
     <div class="booth-pick" id="scBooths"></div>
     <input class="otp" id="scCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="\d{6}" placeholder="••••••" aria-label="รหัส 6 หลัก">
     <div class="row">

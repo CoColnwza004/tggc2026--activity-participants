@@ -75,6 +75,10 @@ g[..., :3] = 255
 g[..., 3] = np.asarray(mi)
 webp(Image.fromarray(g, "RGBA").resize((256, 256), Image.LANCZOS), "ink-grunge.webp", 70)
 
+# --- maps (from the printed programme) ---
+for n in ("map-booths", "map-school"):
+    webp(Image.open(SRC / f"{n}.png").convert("RGB"), f"{n}.webp", 82)
+
 # --- logo ---
 full = Image.open(SRC / "logo-full.png").convert("RGBA")
 webp(full.resize((480, round(480 * full.height / full.width)), Image.LANCZOS), "logo-full.webp", 84)

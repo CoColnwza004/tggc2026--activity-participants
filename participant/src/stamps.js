@@ -14,6 +14,8 @@ export function stampHTML(booth, seedStr = "", extra = "") {
   const rot = ((h % 23) - 11) + (booth.no % 2 ? -4 : 4);
   const mx = (h >> 5) % 100, my = (h >> 11) % 100;
   const no = String(booth.no || 0).padStart(2, "0");
+  const label = String(booth.en || booth.name).toUpperCase();
+  const fs = Math.min(16, Math.max(9.5, 200 / (label.length * 0.74))).toFixed(1); // long names shrink to fit the rim
   const star = (x, y, r) => `<path d="M${x} ${y - r}c${r * 0.16} ${r * 0.6} ${r * 0.4} ${r * 0.84} ${r} ${r}c-${r * 0.6} ${r * 0.16}-${r * 0.84} ${r * 0.4}-${r} ${r}c-${r * 0.16}-${r * 0.6}-${r * 0.4}-${r * 0.84}-${r}-${r}c${r * 0.6}-${r * 0.16} ${r * 0.84}-${r * 0.4} ${r}-${r}z"/>`;
   return `<div class="stamp ${extra}" style="--ink:${booth.color};--rot:${rot}deg;--mx:${mx}%;--my:${my}%">
   <svg viewBox="0 0 200 200" aria-hidden="true">
@@ -27,7 +29,7 @@ export function stampHTML(booth, seedStr = "", extra = "") {
       <circle cx="100" cy="100" r="61" stroke-width="2.6"/>
     </g>
     <g fill="currentColor">
-      <text class="st-top"><textPath href="#${id}a" startOffset="50%" text-anchor="middle">${esc(booth.name.toUpperCase())}</textPath></text>
+      <text class="st-top" style="font-size:${fs}px"><textPath href="#${id}a" startOffset="50%" text-anchor="middle">${esc(label)}</textPath></text>
       <text class="st-bot"><textPath href="#${id}b" startOffset="50%" text-anchor="middle">${booth.no ? `TGGC 2026 · BOOTH ${no}` : "TGGC 2026 · 28.11.2026"}</textPath></text>
       ${star(25, 100, 6)}${star(175, 100, 6)}
     </g>
@@ -39,5 +41,5 @@ export function stampHTML(booth, seedStr = "", extra = "") {
 
 /** the gold "complete" seal used when every booth is done */
 export function finalSealHTML() {
-  return stampHTML({ id: "all", no: 0, name: "Geo Genius · Complete", color: "#c9971c", icon: "star" }, "final", "stamp-final");
+  return stampHTML({ id: "all", no: 0, en: "Geo Genius · Complete", color: "#c9971c", icon: "star" }, "final", "stamp-final");
 }

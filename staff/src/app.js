@@ -1,6 +1,6 @@
 // TGGC 2026 staff site: rotating booth QR (works offline once logged in), scan passports,
 // prize point feed + hand-out, admin dashboard.
-import { EVENT, BOOTH_IDS, boothById } from "../../shared/event.js";
+import { EVENT, BOOTH_IDS, REQUIRED, boothById } from "../../shared/event.js";
 import { STEP, windowAt, codeFor, makePayload } from "../../shared/otp.js";
 import { icon } from "../../shared/web/icons.js";
 import { qrSvg } from "../../shared/web/qr.js";
@@ -94,7 +94,7 @@ function home() {
   show("home");
   $("#whoami").textContent = `${A.name} · ${A.role === "admin" ? "แอดมิน" : "เจ้าหน้าที่"}`;
   $("#adminCard").hidden = A.role !== "admin";
-  $("#stations").innerHTML = EVENT.booths.map((b) => `<a class="station-card" href="#/s/${b.id}" style="--c:${b.color}">${icon(b.icon)}<span class="no">BOOTH ${String(b.no).padStart(2, "0")}</span><b>${esc(b.name)}</b><small>${esc(b.th)} · ${esc(b.place)}</small></a>`).join("");
+  $("#stations").innerHTML = EVENT.booths.map((b) => `<a class="station-card" href="#/s/${b.id}" style="--c:${b.color}">${icon(b.icon)}<span class="no">BOOTH ${String(b.no).padStart(2, "0")} · ${esc(b.en)}</span><b>${esc(b.th)}</b><small>${esc(b.place)}</small></a>`).join("");
   $("#prizeStation").innerHTML = `<a class="station-card" href="#/s/${PRIZE}" style="--c:#c9971c">${icon("gift")}<span class="no">PRIZE POINT</span><b>${esc(EVENT.prizePoint.name)}</b><small>${esc(EVENT.prizePoint.place)}</small></a>`;
 }
 
@@ -114,8 +114,8 @@ async function station(id) {
   show("station");
   const scr = $("[data-screen=station]");
   scr.style.setProperty("--c", prize ? "#c9971c" : b.color);
-  $("#stNo").textContent = prize ? "PRIZE POINT · จุดลุ้นรางวัล" : `BOOTH ${String(b.no).padStart(2, "0")} · ${b.th}`;
-  $("#stName").textContent = b.name;
+  $("#stNo").textContent = prize ? "PRIZE POINT · จุดลุ้นรางวัล" : `BOOTH ${String(b.no).padStart(2, "0")} · ${b.en}`;
+  $("#stName").textContent = b.th;
   $("#howTxt").textContent = prize
     ? "ผู้ที่สะสมตราครบทุกบูธ สแกน QR นี้ด้วยเว็บสะสมตรา แล้วแตะลูกโลกเพื่อลุ้นรางวัล"
     : "ผู้เข้าร่วมสแกน QR ด้วยเว็บสะสมตรา หรือกล้องมือถือ · หรือพิมพ์รหัส 6 หลักในเว็บ";
@@ -197,7 +197,7 @@ async function openCam(mode) {
   const cam = $("#cam");
   cam.hidden = false;
   $("#camResult").hidden = true;
-  $("#camTitle").textContent = mode === "stamp" ? `ประทับตรา · ${boothById(curStation).name}` : "สแกน QR สมุดผู้เข้าร่วม";
+  $("#camTitle").textContent = mode === "stamp" ? `ประทับตรา · บูธ ${boothById(curStation).no}` : "สแกน QR สมุดผู้เข้าร่วม";
   $("#camMsg").textContent = "หันกล้องไปที่ QR \"ของฉัน\" ในเว็บของผู้เข้าร่วม";
   let busy = false;
   stopCam = await startScanner($("#camVideo"), async (text) => {
@@ -244,11 +244,11 @@ async function showPassport(id) {
     const p = j.passport, d = j.draw;
     const n = BOOTH_IDS.filter((b) => j.stamps[b]).length;
     out.innerHTML = `<div class="pcard"><span class="id">${esc(p.id)}</span><h3>${esc(p.name)}</h3><div class="meta">${esc(p.school || "")} · ${ROLE_TH[p.role] || ""} · สะสม ${n}/${BOOTH_IDS.length} ตรา</div>
-      <div class="pstamps">${EVENT.booths.map((b) => `<div class="${j.stamps[b.id] ? "on" : ""}" style="--c:${b.color}"><i>${b.no}</i>${esc(b.name)}${j.stamps[b.id] ? ` · ${fmt(j.stamps[b.id])}` : ""}</div>`).join("")}</div>
+      <div class="pstamps">${EVENT.booths.map((b) => `<div class="${j.stamps[b.id] ? "on" : ""}" style="--c:${b.color}"><i>${b.no}</i>${esc(b.th)}${j.stamps[b.id] ? ` · ${fmt(j.stamps[b.id])}` : ""}</div>`).join("")}</div>
       ${d ? (d.win
         ? `<div class="drawbox win"><small>ผลลุ้น · ${fmt(d.at)}</small><b>🎁 ${esc(d.prize.name)}</b>${d.claimed ? `<div>✓ มอบแล้วเมื่อ ${fmt(d.claimed)} โดย ${esc(d.claimedBy || "")}</div><button class="btn ghost" type="button" data-unclaim="${esc(p.id)}">ยกเลิกการมอบ (กดผิด)</button>` : `<button class="btn gold" type="button" data-claim2="${esc(p.id)}">ยืนยันมอบรางวัล</button>`}</div>`
         : `<div class="drawbox lose"><small>ผลลุ้น · ${fmt(d.at)}</small><b>ไม่ได้รางวัล</b></div>`)
-        : `<div class="drawbox none">${n >= BOOTH_IDS.length ? "สะสมครบแล้ว · ยังไม่ได้ลุ้น" : `ยังสะสมไม่ครบ (ขาด ${BOOTH_IDS.length - n} บูธ)`}</div>`}</div>`;
+        : `<div class="drawbox none">${n >= REQUIRED ? "สะสมครบแล้ว · ยังไม่ได้ลุ้น" : `ยังสะสมไม่ครบ (ขาด ${REQUIRED - n} ตรา)`}</div>`}</div>`;
   } catch (e) { out.innerHTML = `<div class="pcard">${esc(e.message)}</div>`; }
 }
 $("#lookupOut").addEventListener("click", async (e) => {
@@ -285,7 +285,7 @@ function renderAdmin(quiet) {
   ];
   $("#kpis").innerHTML = k.map(([a, b, c]) => `<div class="kpi"><span>${a}</span><b>${Number(b).toLocaleString("th-TH")}</b><small>${c}</small></div>`).join("");
   const max = Math.max(1, ...Object.values(S.booths));
-  $("#boothBars").innerHTML = EVENT.booths.map((b) => `<div class="barrow" style="--c:${b.color}"><span>${b.no}. ${esc(b.name)}</span><span class="track"><i style="width:${((S.booths[b.id] || 0) / max) * 100}%"></i></span><b>${S.booths[b.id] || 0}</b></div>`).join("");
+  $("#boothBars").innerHTML = EVENT.booths.map((b) => `<div class="barrow" style="--c:${b.color}"><span>${b.no}. ${esc(b.th)}</span><span class="track"><i style="width:${((S.booths[b.id] || 0) / max) * 100}%"></i></span><b>${S.booths[b.id] || 0}</b></div>`).join("");
   if (!quiet || !document.activeElement || !document.activeElement.closest(".panel")) {
     renderPrizeRows(S.prizes);
     $("#setRate").value = Math.round(S.settings.winRate * 100);

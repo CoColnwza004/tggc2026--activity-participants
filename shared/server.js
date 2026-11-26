@@ -1,7 +1,7 @@
 // Server-side logic shared by both Workers (participant + staff). Storage: Cloudflare D1 (binding DB).
 // The schema is created on first use, and a random master key is generated and kept in D1,
 // so the only setup is binding the database and setting the two PINs.
-import { EVENT, BOOTH_IDS } from "./event.js";
+import { EVENT, BOOTH_IDS, REQUIRED } from "./event.js";
 import { b64u, hmac, codeFor, windowAt } from "./otp.js";
 
 const SCHEMA = [
@@ -170,7 +170,7 @@ export async function addStamp(env, pid, booth, at, via) {
 
 export async function hasAllStamps(env, pid) {
   const r = await env.DB.prepare(`SELECT COUNT(*) AS n FROM stamps WHERE pid = ? AND booth IN (${BOOTH_IDS.map(() => "?").join(",")})`).bind(pid, ...BOOTH_IDS).first();
-  return r.n >= BOOTH_IDS.length;
+  return r.n >= REQUIRED;
 }
 
 // ---------- the draw ----------

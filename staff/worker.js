@@ -1,6 +1,6 @@
 // Staff site Worker (separate site, same D1 database as the participant site).
 // PINs come from Worker secrets: STAFF_PIN (booth/prize staff) and ADMIN_PIN (dashboard + everything).
-import { EVENT, BOOTH_IDS } from "../shared/event.js";
+import { EVENT, BOOTH_IDS, REQUIRED } from "../shared/event.js";
 import {
   json, fail, body, clientIp, master, settings, resetSettingsCache, boothSecret, staffToken, staffFromReq,
   isLimited, bump, passportState, addStamp, clean,
@@ -52,7 +52,7 @@ async function summary(env) {
   const [pc, bc, comp, dc, prizes, roles] = await db.batch([
     db.prepare("SELECT COUNT(*) AS n FROM passports"),
     db.prepare("SELECT booth, COUNT(*) AS n FROM stamps GROUP BY booth"),
-    db.prepare(`SELECT COUNT(*) AS n FROM (SELECT pid FROM stamps WHERE booth IN (${BOOTH_IDS.map(() => "?").join(",")}) GROUP BY pid HAVING COUNT(*) >= ?)`).bind(...BOOTH_IDS, BOOTH_IDS.length),
+    db.prepare(`SELECT COUNT(*) AS n FROM (SELECT pid FROM stamps WHERE booth IN (${BOOTH_IDS.map(() => "?").join(",")}) GROUP BY pid HAVING COUNT(*) >= ?)`).bind(...BOOTH_IDS, REQUIRED),
     db.prepare("SELECT COUNT(*) AS n, SUM(prize IS NOT NULL) AS wins, SUM(claimed IS NOT NULL) AS claimed FROM draws"),
     db.prepare("SELECT id, name, art, total, remaining, sort, active FROM prizes ORDER BY sort, id"),
     db.prepare("SELECT role, COUNT(*) AS n FROM passports GROUP BY role"),
@@ -86,7 +86,7 @@ async function exportCsv(env) {
        FROM passports p LEFT JOIN draws d ON d.pid = p.id LEFT JOIN prizes z ON z.id = d.prize
       ORDER BY p.created`
   ).all();
-  const head = ["รหัสสมุด", "ชื่อ", "โรงเรียน/หน่วยงาน", "ประเภท", "เบอร์โทร", "เวลาสมัคร", ...EVENT.booths.map((b) => `บูธ ${b.no} ${b.name}`), "จำนวนตรา", "เวลาลุ้น", "ผลลุ้น", "รางวัล", "เวลารับรางวัล", "ผู้มอบ"];
+  const head = ["รหัสสมุด", "ชื่อ", "โรงเรียน/หน่วยงาน", "ประเภท", "เบอร์โทร", "เวลาสมัคร", ...EVENT.booths.map((b) => `บูธ ${b.no} ${b.th}`), "จำนวนตรา", "เวลาลุ้น", "ผลลุ้น", "รางวัล", "เวลารับรางวัล", "ผู้มอบ"];
   const rows = [head];
   for (const r of results) {
     const st = Object.fromEntries((r.st || "").split(",").filter(Boolean).map((x) => x.split("@")));
