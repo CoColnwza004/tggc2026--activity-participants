@@ -45,6 +45,13 @@ npx wrangler secret put ADMIN_PIN -c staff/wrangler.jsonc
 
 แก้ไขครั้งต่อไป: `npm run deploy`
 
+**ถ้า deploy ติดขั้นอัปโหลดไฟล์ (asset upload)** ใช้แบบฝังไฟล์ไว้ใน Worker แทน (ใส่ `database_id` ใน `wrangler.embed.jsonc` ด้วย):
+```bash
+npm run build && node scripts/build-embedded.mjs
+npx wrangler deploy -c participant/wrangler.embed.jsonc
+npx wrangler deploy -c staff/wrangler.embed.jsonc
+```
+
 ## ก่อนวันงาน (checklist)
 1. แก้ `shared/event.js` → deploy
 2. เข้าเว็บเจ้าหน้าที่ด้วย ADMIN_PIN → แอดมิน → ตั้งจำนวนของรางวัล และโอกาสได้รางวัล

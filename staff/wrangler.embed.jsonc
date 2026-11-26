@@ -1,0 +1,8 @@
+{
+  // fallback deploy with files embedded in the Worker — see scripts/build-embedded.mjs
+  "name": "tggc2569-activity-staff",
+  "main": "../dist/staff-embedded.js",
+  "compatibility_date": "2025-06-01",
+  "d1_databases": [{ "binding": "DB", "database_name": "tggc2569-activity", "database_id": "00000000-0000-0000-0000-000000000000" }],
+  "observability": { "enabled": true }
+}
