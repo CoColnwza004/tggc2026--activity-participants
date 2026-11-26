@@ -44,10 +44,10 @@ function applyServer(j) {
 }
 
 // ---------------------------------------------------------------- api
-async function api(path, data, method = data ? "POST" : "GET") {
+async function api(path, data, method = data ? "POST" : "GET", wait = 12000) {
   if (DEMO) return demoApi(path, data);
   const ctl = new AbortController();
-  const t = setTimeout(() => ctl.abort(), 12000);
+  const t = setTimeout(() => ctl.abort(), wait);
   let r;
   try {
     r = await fetch(path, {
@@ -564,11 +564,13 @@ async function handleCode(text, src) {
   const b = boothById(p.booth);
   if (!b) { toast("ไม่พบบูธนี้", true); return; }
   if (S.stamps[b.id]) { toast(`คุณได้ตราบูธ ${b.no} · ${b.th} แล้ว`); location.hash = "#/passport"; return; }
-  if (busy) return;
+  if (busy) { toast("กำลังส่งตราก่อนหน้า รอสักครู่แล้วสแกนอีกครั้ง"); return; }
   busy = true;
   const scannedAt = Date.now();
+  toast(`กำลังรับตราบูธ ${b.no}…`);
   try {
-    const j = await api("/api/stamp", { c: p.raw, at: scannedAt, sent: Date.now() });
+    // slow venue Wi-Fi: after 6 s the stamp is kept on the phone and sent again in the background
+    const j = await api("/api/stamp", { c: p.raw, at: scannedAt, sent: Date.now() }, "POST", 6000);
     applyServer(j);
     celebrate(b);
   } catch (e) {

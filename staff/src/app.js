@@ -93,6 +93,7 @@ $("#loginForm").addEventListener("submit", async (e) => {
     $("#lgPin").value = "";
     if (!/^#\/s\//.test(location.hash)) location.hash = "#/"; // keep the booth screen a poster QR asked for
     route();
+qrSvg("warm-up").catch(() => {}); // load the QR library now, not when the first booth screen opens
   } catch (ex) { err.textContent = ex.message; err.hidden = false; }
   finally { btn.disabled = false; }
 });
@@ -109,9 +110,10 @@ function home() {
 }
 
 // each booth card wears its poster pattern (drawn once, reused)
+const patternImg = (kind, o) => "data:image/svg+xml," + encodeURIComponent(patternSvg(kind, o).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ').replaceAll("currentColor", "#fff"));
 const cardPats = new Map();
 const cardPattern = (b) => {
-  if (!cardPats.has(b.no)) cardPats.set(b.no, patternSvg(boothPattern(b.no), { w: 320, h: 200, u: 26, sw: 1.1, seed: b.no, cls: "sc-pat" }));
+  if (!cardPats.has(b.no)) cardPats.set(b.no, `<img class="sc-pat" alt="" src="${patternImg(boothPattern(b.no), { w: 320, h: 200, u: 26, sw: 1.1, seed: b.no })}">`);
   return cardPats.get(b.no);
 };
 
@@ -132,7 +134,8 @@ async function station(id) {
   const scr = $("[data-screen=station]");
   scr.style.setProperty("--c", prize ? "#c9971c" : b.color);
   // the same background pattern as this booth's printed QR poster
-  $(".st-pat").innerHTML = prize ? "" : patternSvg(boothPattern(b.no), { w: 1200, h: 900, u: 56, sw: 1.6, seed: b.no });
+  // drawn as a picture (rasterised once by the browser), so it costs nothing while the QR and timer update
+  $(".st-pat").innerHTML = prize ? "" : `<img alt="" src="${patternImg(boothPattern(b.no), { w: 1200, h: 900, u: 56, sw: 1.6, seed: b.no })}">`;
   $("#stNo").textContent = prize ? "PRIZE COUNTER" : `BOOTH ${String(b.no).padStart(2, "0")} · ${b.en}`;
   $("#stName").textContent = b.th;
   const lg = $("#stLogo");
@@ -152,29 +155,51 @@ async function station(id) {
   keepAwake();
   if (!prize) {
     await tickQR();
-    timers.push(setInterval(tickQR, 1000));
+    timers.push(setInterval(tickQR, 500));
   }
   refreshStation();
   timers.push(setInterval(() => { if (!document.hidden) refreshStation(); }, prize ? 15000 : 30000));
 }
 
+// QR for the current 30-second window. The next window's QR is built ahead of time, so the swap at the
+// boundary is instant even on a slow device; a failed render is retried on the next tick (not 30 s later).
+let qrBusy = false;
+const qrCache = new Map(); // "booth:win" → { svg, code }
+async function buildQR(id, win) {
+  const k = id + ":" + win;
+  if (qrCache.has(k)) return qrCache.get(k);
+  const code = await codeFor(A.secrets[id], id, win);
+  const url = `${EVENT.participantUrl.replace(/#.*$/, "")}#s=${makePayload(id, win, code)}`;
+  // ECC "L": a screen is never smudged, and fewer, bigger modules are quicker for phone cameras to read
+  const v = { svg: await qrSvg(url, { ecc: "L", margin: 2 }), code };
+  qrCache.set(k, v);
+  if (qrCache.size > 6) qrCache.delete(qrCache.keys().next().value);
+  return v;
+}
 async function tickQR() {
   const id = curStation;
+  if (!id || id === PRIZE) return;
   const t = now();
   const win = windowAt(t);
   const left = STEP - Math.floor((t / 1000) % STEP);
   $("#secsTxt").textContent = left;
   $("#timerArc").style.strokeDashoffset = String(94.25 * (1 - left / STEP));
-  if (win === lastWin) return;
-  lastWin = win;
-  const secret = A.secrets[id];
-  const code = await codeFor(secret, id, win);
-  if (id !== curStation) return;
-  const url = `${EVENT.participantUrl.replace(/#.*$/, "")}#s=${makePayload(id, win, code)}`;
-  const card = $("#qrCard");
-  card.classList.remove("swap"); void card.offsetWidth; card.classList.add("swap");
-  $("#qrBox").innerHTML = await qrSvg(url, { ecc: "M", margin: 1 });
-  $("#codeTxt").textContent = code.slice(0, 3) + " " + code.slice(3);
+  if (qrBusy) return;
+  qrBusy = true;
+  try {
+    if (win !== lastWin) {
+      const q = await buildQR(id, win);
+      if (id !== curStation) return;
+      const card = $("#qrCard");
+      card.classList.remove("swap"); void card.offsetWidth; card.classList.add("swap");
+      $("#qrBox").innerHTML = q.svg;
+      $("#codeTxt").textContent = q.code.slice(0, 3) + " " + q.code.slice(3);
+      lastWin = win; // only once it is really on screen
+    } else if (left <= 8) {
+      await buildQR(id, win + 1); // warm up the next one
+    }
+  } catch { /* try again on the next tick */ }
+  finally { qrBusy = false; }
 }
 
 async function refreshStation() {
@@ -337,6 +362,7 @@ $("#lookupOut").addEventListener("click", async (e) => {
 
 // ---------------------------------------------------------------- boot
 route();
+qrSvg("warm-up").catch(() => {}); // load the QR library now, not when the first booth screen opens
 // booth names/logos edited on the admin site: refresh the screen that shows them
 loadBooths(() => {
   if (!$("[data-screen=home]").hidden) home();

@@ -3,7 +3,7 @@
 let jsQR = null;
 
 export async function startScanner(video, onResult, { onError } = {}) {
-  let stream, stopped = false, timer = 0, detector = null, last = "", lastAt = 0;
+  let stream, stopped = false, timer = 0, detector = null, last = "", lastAt = 0, frame = 0;
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
@@ -42,11 +42,14 @@ export async function startScanner(video, onResult, { onError } = {}) {
         } else if (jsQR) {
           const w = video.videoWidth, h = video.videoHeight;
           if (w && h) {
-            const s = Math.min(1, 720 / Math.max(w, h));
-            canvas.width = Math.round(w * s); canvas.height = Math.round(h * s);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const r = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+            // iPhone/iPad (no BarcodeDetector): read the middle of the picture, where the on-screen frame is.
+            // Alternate a tight and a wide crop: quicker per frame and finds both near and far QR codes.
+            const side = Math.min(w, h) * (++frame % 2 ? 0.72 : 1), sx = (w - side) / 2, sy = (h - side) / 2;
+            const out = Math.min(640, Math.round(side));
+            canvas.width = out; canvas.height = out;
+            ctx.drawImage(video, sx, sy, side, side, 0, 0, out, out);
+            const img = ctx.getImageData(0, 0, out, out);
+            const r = jsQR(img.data, out, out, { inversionAttempts: "dontInvert" });
             if (r) text = r.data;
           }
         }
@@ -59,7 +62,7 @@ export async function startScanner(video, onResult, { onError } = {}) {
         if ((await onResult(text)) === true) return stop();
       }
     }
-    if (!stopped) timer = setTimeout(tick, detector ? 90 : 140);
+    if (!stopped) timer = setTimeout(tick, detector ? 90 : 60);
   }
   function stop() {
     stopped = true;
