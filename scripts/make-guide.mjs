@@ -3,7 +3,7 @@
 //   poster/guide-staff.png + .pdf
 // Screens come from poster/shots/ (make them first: node scripts/guide-shots.mjs).
 // Usage: node scripts/make-guide.mjs
-import { writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { EVENT, REQUIRED } from "../shared/event.js";
 import { icon } from "../shared/web/icons.js";
@@ -152,6 +152,13 @@ for (const [name, make] of [["guide-participant", participant], ["guide-staff", 
   await p.goto(pathToFileURL(tmp).href, { waitUntil: "networkidle" });
   await p.evaluate(() => document.fonts.ready);
   const over = await p.evaluate(() => [...document.querySelectorAll(".pg *")].filter((e) => e.getBoundingClientRect().bottom > 1754 - 50 && !e.closest(".ft")).map((e) => e.className).slice(0, 4));
+  if (process.env.PRINT) {
+    // large-format PDF (standee): page at 2× the layout size so shadows/effects are rasterised at print resolution
+    mkdirSync(root + "poster/print", { recursive: true });
+    await p.pdf({ path: root + `poster/print/${name}-print.pdf`, width: `${2480 / 96}in`, height: `${3508 / 96}in`, printBackground: true, pageRanges: "1", scale: 2 });
+    console.log(`poster/print/${name}-print.pdf`);
+    await ctx.close(); continue;
+  }
   await p.screenshot({ path: root + `poster/${name}.png` });
   await p.pdf({ path: root + `poster/${name}.pdf`, width: "210mm", height: "297mm", printBackground: true, pageRanges: "1", scale: (210 / 25.4 * 96) / 1240 });
   console.log(`poster/${name}.png`, over.length ? "OVERFLOW " + over.join(",") : "");

@@ -19,13 +19,15 @@ catch { pw = await import(process.env.PLAYWRIGHT_PATH || "playwright"); }
 const chromium = pw.chromium || pw.default.chromium;
 
 const root = fileURLToPath(new URL("../", import.meta.url));
+// PRINT=1: large-format PDFs (standee / roll-up) in poster/print/ — page at 2× the layout size, globe at 5× pixels
+const PRINT = !!process.env.PRINT;
 const out = root + "poster/";
 mkdirSync(out, { recursive: true });
 
 // the real globe, bundled for the page (still frame: the page runs with reduced motion)
 const globeJs = (await build({
   stdin: { contents: `import { createGlobe } from "./participant/src/globe.js";
-    for (const c of document.querySelectorAll("canvas.globe")) createGlobe(c, { dots: +c.dataset.dots || 3200, size: +c.dataset.size || 0.3, tilt: 0.36, round: true });
+    for (const c of document.querySelectorAll("canvas.globe")) createGlobe(c, { dots: +c.dataset.dots || 3200, size: +c.dataset.size || 0.3, tilt: 0.36, round: true, dpr: ${PRINT ? 5 : 0} });
     document.fonts.ready.then(() => setTimeout(() => (window.__ready = true), 400));`, resolveDir: root, loader: "js" },
   bundle: true, format: "iife", minify: true, write: false, logLevel: "warning",
 })).outputFiles[0].text;
@@ -297,6 +299,12 @@ for (const [k, w, h, dsf] of shots) {
   await p.goto(pathToFileURL(tmp).href, { waitUntil: "networkidle" });
   await p.waitForFunction(() => window.__ready === true, null, { timeout: 20000 });
   const name = { a4: "poster-a4", soc: "poster-social", sto: "poster-story" }[k];
+  if (PRINT) {
+    mkdirSync(out + "print", { recursive: true });
+    await p.pdf({ path: out + `print/${name}-print.pdf`, width: `${(w * 2) / 96}in`, height: `${(h * 2) / 96}in`, printBackground: true, pageRanges: "1", scale: 2 });
+    console.log(`poster/print/${name}-print.pdf ${((w * 2 / 96) * 25.4).toFixed(0)}×${((h * 2 / 96) * 25.4).toFixed(0)} mm`);
+    await ctx.close(); continue;
+  }
   await p.screenshot({ path: out + name + ".png" });
   if (k === "a4") await p.pdf({ path: out + name + ".pdf", width: "210mm", height: "297mm", printBackground: true, pageRanges: "1", scale: 210 / 25.4 * 96 / w });
   const over = await p.evaluate((H) => [...document.querySelectorAll(".poster *")].filter((e) => !e.closest(".sky") && e.getBoundingClientRect().bottom > H).map((e) => e.className.baseVal ?? e.className).slice(0, 5), h);

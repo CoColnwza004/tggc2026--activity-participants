@@ -36,7 +36,7 @@ export function createGlobe(canvas, opt = {}) {
   let speed = o.speed;
 
   function fit() {
-    dpr = Math.min(2, devicePixelRatio || 1);
+    dpr = o.dpr || Math.min(2, devicePixelRatio || 1); // o.dpr: print renders (posters) ask for more pixels
     const r = canvas.getBoundingClientRect();
     w = r.width; h = r.height;
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);

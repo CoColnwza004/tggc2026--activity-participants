@@ -33,7 +33,7 @@ const srv = createServer((q, r) => {
 const base = `http://localhost:${srv.address().port}/`;
 
 let b = await chromium.launch();
-const phone = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, reducedMotion: "reduce" };
+const phone = { viewport: { width: 390, height: 844 }, deviceScaleFactor: +process.env.SHOT_DSF || 2, isMobile: true, hasTouch: true, reducedMotion: "reduce" };
 const wait = (p, ms) => p.waitForTimeout(ms);
 // ---------------- staff (live site, read-only)
 if (staffPin) {
