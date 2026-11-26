@@ -119,7 +119,12 @@ export async function readCounts(env, keys) {
 // ---------- secrets & tokens ----------
 const sig = async (env, msg, len = 22) => b64u.enc(await hmac(await master(env), msg)).slice(0, len);
 
-export const boothSecret = async (env, booth) => b64u.enc(await hmac(await master(env), "booth:" + booth));
+const SECRETS = new Map();
+export async function boothSecret(env, booth) {
+  let v = SECRETS.get(booth);
+  if (!v) { v = b64u.enc(await hmac(await master(env), "booth:" + booth)); SECRETS.set(booth, v); }
+  return v;
+}
 export const passToken = (env, id) => sig(env, "pass:" + id);
 
 /** header x-pass: "<id>.<token>" → passport id or null */
@@ -163,6 +168,18 @@ export async function bump(env, key, windowSec) {
   ).bind(key, now + windowSec * 1000, now).run();
 }
 
+/** count a failed attempt and return the count in this window (one round trip) */
+export async function bumpCount(env, key, windowSec) {
+  const now = Date.now();
+  const r = await env.DB.prepare(
+    `INSERT INTO attempts (k, n, until) VALUES (?1, 1, ?2)
+     ON CONFLICT (k) DO UPDATE SET n = CASE WHEN until < ?3 THEN 1 ELSE n + 1 END,
+                                   until = CASE WHEN until < ?3 THEN ?2 ELSE until END
+     RETURNING n`
+  ).bind(key, now + windowSec * 1000, now).first();
+  return r ? r.n : 1;
+}
+
 // ---------- booth code verification ----------
 const LATE_WINDOWS = 20; // QR scanned while offline is accepted up to ~10 min later
 
@@ -198,12 +215,13 @@ export function newId() {
 export const normName = (s) => String(s || "").normalize("NFC").replace(/\s+/g, " ").trim().toLowerCase();
 export const clean = (s, n = 120) => String(s || "").replace(/[\u0000-\u001f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, n);
 
-export async function passportState(env, pid) {
-  const [p, st, dr] = await env.DB.batch([
-    env.DB.prepare("SELECT id, name, school, role, created FROM passports WHERE id = ?").bind(pid),
-    env.DB.prepare("SELECT booth, at, via FROM stamps WHERE pid = ?").bind(pid),
-    env.DB.prepare("SELECT at, staff FROM redeems WHERE pid = ?").bind(pid),
-  ]);
+// the three reads that make up a passport's state; appended to write batches so a write + its result is one round trip
+const stateQueries = (db, pid) => [
+  db.prepare("SELECT id, name, school, role, created FROM passports WHERE id = ?").bind(pid),
+  db.prepare("SELECT booth, at, via FROM stamps WHERE pid = ?").bind(pid),
+  db.prepare("SELECT at, staff FROM redeems WHERE pid = ?").bind(pid),
+];
+function toState([p, st, dr]) {
   const passport = p.results[0];
   if (!passport) return null;
   const stamps = {};
@@ -211,32 +229,49 @@ export async function passportState(env, pid) {
   const d = dr.results[0];
   return { passport, stamps, redeem: d ? { at: d.at, by: d.staff || null } : null };
 }
+export async function passportState(env, pid) {
+  return toState(await env.DB.batch(stateQueries(env.DB, pid)));
+}
 
-/** new stamp → booth total, time-bucket total and the passport's own count, all in one transaction (only if the stamp is new) */
-export async function addStamp(env, pid, booth, at, via) {
-  const db = env.DB;
+/**
+ * Record a stamp and return the passport, in ONE transaction / ONE round trip:
+ * stamp (only if the passport exists and, with limitKey, the code-attempt limit is not hit) → booth total →
+ * 15-min total → the passport's own count → "completed" the first time it reaches REQUIRED → fresh state.
+ * Every total only moves if the step before it changed a row, so nothing can drift even if a request dies.
+ */
+export async function stampAndState(env, pid, booth, at, via, { limitKey = null, limitMax = 15 } = {}) {
+  const db = env.DB, now = Date.now();
+  const guard = limitKey ? " AND NOT EXISTS (SELECT 1 FROM attempts WHERE k = ?5 AND until > ?6 AND n >= ?7)" : "";
+  const ins = db.prepare(`INSERT OR IGNORE INTO stamps (pid, booth, at, via) SELECT ?1, ?2, ?3, ?4
+                           WHERE EXISTS (SELECT 1 FROM passports WHERE id = ?1)${guard}`);
   const res = await db.batch([
-    db.prepare("INSERT OR IGNORE INTO stamps (pid, booth, at, via) VALUES (?, ?, ?, ?)").bind(pid, booth, at, via),
+    db.prepare("SELECT n FROM attempts WHERE k = ? AND until > ?").bind(limitKey || "", now),
+    limitKey ? ins.bind(pid, booth, at, via, limitKey, now, limitMax) : ins.bind(pid, booth, at, via),
     bumpIfChanged(env, "b:" + booth),
     bumpIfChanged(env, "t:" + Math.floor(at / BUCKET)),
     db.prepare("UPDATE passports SET n = n + 1 WHERE id = ? AND changes() > 0").bind(pid),
+    db.prepare("INSERT OR IGNORE INTO completed (pid, at) SELECT ?1, ?2 WHERE changes() > 0 AND (SELECT n FROM passports WHERE id = ?1) >= ?3").bind(pid, now, REQUIRED),
+    bumpIfChanged(env, "done"),
+    ...stateQueries(db, pid),
   ]);
-  return res[0].meta.changes > 0;
+  const limited = !!limitKey && (res[0].results[0]?.n || 0) >= limitMax;
+  return { fresh: res[1].meta.changes > 0, limited, state: toState(res.slice(7)) };
+}
+
+/** prize counter: record the ticket once, only if the passport is complete; returns the passport — one round trip */
+export async function redeemAndState(env, pid, by) {
+  const db = env.DB;
+  const res = await db.batch([
+    db.prepare("INSERT OR IGNORE INTO redeems (pid, at, staff) SELECT ?1, ?2, ?3 WHERE (SELECT n FROM passports WHERE id = ?1) >= ?4").bind(pid, Date.now(), by, REQUIRED),
+    bumpIfChanged(env, "rd"),
+    ...stateQueries(db, pid),
+  ]);
+  return { fresh: res[0].meta.changes > 0, state: toState(res.slice(2)) };
 }
 
 export const stampCount = (stamps) => BOOTH_IDS.filter((b) => stamps[b]).length;
 
-/** after a new stamp: the first time a passport reaches REQUIRED, count it as completed (once, even under races) */
-export async function noteProgress(env, pid, stamps) {
-  if (stampCount(stamps) < REQUIRED) return;
-  await writeCounted(env, env.DB.prepare("INSERT OR IGNORE INTO completed (pid, at) VALUES (?, ?)").bind(pid, Date.now()), ["done"]);
-}
-
 // ---------- prize counter ----------
-/** staff scanned a complete ticket: record it once (a second scan of the same ticket changes nothing) */
-export async function redeemTicket(env, pid, by) {
-  return writeCounted(env, env.DB.prepare("INSERT OR IGNORE INTO redeems (pid, at, staff) VALUES (?, ?, ?)").bind(pid, Date.now(), by), ["rd"]);
-}
 export const unredeemTicket = (env, pid) => writeCounted(env, env.DB.prepare("DELETE FROM redeems WHERE pid = ?").bind(pid), ["rd"], -1);
 /** the participant's phone waits on this while at the prize counter: one indexed row instead of the whole passport */
 export async function redeemState(env, pid) {

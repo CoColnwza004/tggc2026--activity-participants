@@ -32,7 +32,7 @@ export function createGlobe(canvas, opt = {}) {
   const ctx = canvas.getContext("2d");
   const P = points(o.dots);
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let w = 0, h = 0, dpr = 1, rot = -o.pin[0] * D2R + 0.5, raf = 0, prev = 0, visible = true, t0 = performance.now();
+  let w = 0, h = 0, dpr = 1, rot = -o.pin[0] * D2R + 0.5, raf = 0, prev = 0, visible = true, paused = false, t0 = performance.now();
   let speed = o.speed;
 
   function fit() {
@@ -160,7 +160,7 @@ export function createGlobe(canvas, opt = {}) {
 
   function loop(now) {
     raf = 0;
-    if (!visible || document.hidden) return;
+    if (!visible || paused || document.hidden) return;
     frame(now);
     if (!still) raf = requestAnimationFrame(loop);
   }
@@ -177,6 +177,8 @@ export function createGlobe(canvas, opt = {}) {
 
   return {
     setSpeed(s) { speed = s; },
+    pause() { paused = true; },
+    resume() { paused = false; start(); },
     get speed() { return speed; },
     destroy() { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); document.removeEventListener("visibilitychange", vis); },
   };

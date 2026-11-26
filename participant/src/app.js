@@ -60,7 +60,8 @@ async function api(path, data, method = data ? "POST" : "GET", wait = 12000) {
   } finally { clearTimeout(t); }
   const j = await r.json().catch(() => null);
   if (!r.ok || !j || j.ok === false) {
-    if (r.status >= 500 && (!j || j.error === "err")) throw Object.assign(new Error((j && j.message) || "ระบบไม่ว่าง"), { net: true });
+    // not our JSON (a Cloudflare error/limit page, a captive Wi-Fi portal…) or a server hiccup: worth retrying later
+    if (!j || (r.status >= 500 && j.error !== "retry")) throw Object.assign(new Error((j && j.message) || "เครือข่ายไม่เสถียร ลองใหม่อีกครั้ง"), { net: true });
     throw Object.assign(new Error((j && j.message) || "เกิดข้อผิดพลาด"), { code: j && j.error, status: r.status });
   }
   return j;
@@ -109,6 +110,7 @@ async function flush() {
 }
 function schedule() { clearTimeout(flushTimer); flushTimer = setTimeout(flush, 8000); }
 addEventListener("online", flush);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && S.pending.length) flush(); });
 
 async function sync(force = false) {
   if (!S.pass || (!force && Date.now() - S.synced < 45000)) return;
@@ -495,6 +497,7 @@ async function openScanner(mode = "booth") {
   sfx.unlock();
   if (!S.pass) { location.hash = "#/join"; toast("เปิดสมุดสะสมตราก่อนนะ"); return; }
   scanMode = mode;
+  heroGlobe?.pause(); // give the phone's CPU to the camera decoder
   const sc = $("#scanner");
   sc.hidden = false;
   document.body.style.overflow = "hidden";
@@ -518,6 +521,7 @@ async function openScanner(mode = "booth") {
 }
 function closeScanner() {
   if (stopCam) { stopCam(); stopCam = null; }
+  heroGlobe?.resume();
   $("#scanner").hidden = true;
   document.body.style.overflow = "";
 }

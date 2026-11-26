@@ -3,7 +3,7 @@
 import { EVENT, BOOTH_IDS, REQUIRED } from "../shared/event.js";
 import {
   json, fail, body, clientIp, master, boothSecret, staffToken, staffFromReq,
-  isLimited, bump, passportState, addStamp, clean, redeemTicket, noteProgress, stampCount, boothConfig, logoResponse,
+  isLimited, bump, passportState, stampAndState, redeemAndState, clean, boothConfig, logoResponse,
 } from "../shared/server.js";
 import { adminApi } from "../shared/admin.js";
 
@@ -70,23 +70,20 @@ async function api(env, req, url) {
     // staff stamps a participant's passport by scanning its QR (fallback when the participant's camera fails)
     const b = await body(req);
     if (!BOOTH_IDS.includes(b.booth) || !/^G[0-9A-Z]{6}$/.test(b.pid || "")) return fail(400, "bad", "ข้อมูลไม่ถูกต้อง");
-    const s0 = await passportState(env, b.pid);
-    if (!s0) return fail(404, "nf", "ไม่พบสมุดรหัสนี้");
-    const fresh = await addStamp(env, b.pid, b.booth, Date.now(), "staff:" + who.name);
-    const s1 = await passportState(env, b.pid);
-    if (fresh) await noteProgress(env, b.pid, s1.stamps);
-    return json({ ok: true, fresh, ...s1, now: Date.now() });
+    // stamp + totals + fresh passport: one transaction, one round trip
+    const r = await stampAndState(env, b.pid, b.booth, Date.now(), "staff:" + who.name);
+    if (!r.state) return fail(404, "nf", "ไม่พบสมุดรหัสนี้");
+    return json({ ok: true, fresh: r.fresh, ...r.state, now: Date.now() });
   }
   if (route === "POST /api/redeem") {
     // prize counter: staff scanned the participant's ticket → record it once; the participant then fills in a raffle slip
     const b = await body(req);
     if (!/^G[0-9A-Z]{6}$/.test(b.pid || "")) return fail(400, "bad", "รหัสตั๋วไม่ถูกต้อง");
-    const s0 = await passportState(env, b.pid);
-    if (!s0) return fail(404, "nf", "ไม่พบตั๋ว/สมุดรหัสนี้");
-    if (s0.redeem) return json({ ok: true, fresh: false, ...s0, now: Date.now() });
-    if (stampCount(s0.stamps) < REQUIRED) return fail(400, "incomplete", "ยังสะสมตราไม่ครบ ยังไม่มีสิทธิ์");
-    const fresh = await redeemTicket(env, b.pid, who.name);
-    return json({ ok: true, fresh, ...(await passportState(env, b.pid)), now: Date.now() });
+    // record once (only if complete) + fresh passport: one round trip
+    const r = await redeemAndState(env, b.pid, who.name);
+    if (!r.state) return fail(404, "nf", "ไม่พบตั๋ว/สมุดรหัสนี้");
+    if (!r.fresh && !r.state.redeem) return fail(400, "incomplete", "ยังสะสมตราไม่ครบ ยังไม่มีสิทธิ์");
+    return json({ ok: true, fresh: r.fresh, ...r.state, now: Date.now() });
   }
 
   const ar = await adminApi(env, req, url, who); // admin role: still used by the lookup screen (undo a ticket)
@@ -99,9 +96,12 @@ export default {
     const url = new URL(req.url);
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(req);
     if (!env.DB) return fail(503, "nodb", "ยังไม่ได้เชื่อมฐานข้อมูล D1");
+    const t0 = Date.now();
     try {
       await master(env); // creates tables on first use; cached per isolate afterwards
-      return await api(env, req, url);
+      const res = await api(env, req, url);
+      res.headers.set("server-timing", `app;dur=${Date.now() - t0}`);
+      return res;
     } catch (e) {
       console.error(e);
       return fail(500, "err", "ระบบขัดข้องชั่วคราว ลองใหม่อีกครั้ง");
