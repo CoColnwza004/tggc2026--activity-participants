@@ -20,7 +20,7 @@ export const EVENT = {
   mapsUrl: "https://www.google.com/maps/search/?api=1&query=%E0%B9%82%E0%B8%A3%E0%B8%87%E0%B9%80%E0%B8%A3%E0%B8%B5%E0%B8%A2%E0%B8%99%E0%B8%8A%E0%B8%A5%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%97%E0%B8%B2%E0%B8%99%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B8%B2",
 
   // URL ของเว็บผู้เข้าร่วม — QR ที่บูธจะชี้มาที่นี่ (สแกนด้วยกล้องมือถือปกติก็เปิดเว็บและรับตราได้ทันที)
-  participantUrl: "https://tggc2569-activity.pages.dev/",
+  participantUrl: "https://tggc2569-activity.ktxcdd.workers.dev/",
 
   booths: [
     { id: "b1", no: 1, name: "GIS Explorer", th: "แผนที่ดิจิทัลรอบตัวเรา", icon: "map", color: "#075f98",
