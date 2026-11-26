@@ -9,12 +9,21 @@ const REDEEMS = [
   `CREATE TABLE IF NOT EXISTS redeems (pid TEXT PRIMARY KEY, at INTEGER NOT NULL, staff TEXT)`,
   `CREATE INDEX IF NOT EXISTS redeems_at ON redeems (at)`,
 ];
+// running totals, so booth screens and the dashboard read a handful of rows instead of counting every stamp
+const COUNTS = [
+  `CREATE TABLE IF NOT EXISTS counts (k TEXT PRIMARY KEY, n INTEGER NOT NULL) WITHOUT ROWID`,
+  `CREATE TABLE IF NOT EXISTS completed (pid TEXT PRIMARY KEY, at INTEGER NOT NULL) WITHOUT ROWID`,
+];
+// bump when the derived tables change; also rebuilt when the booth list or REQUIRED changes
+const SCHEMA_V = `4|${REQUIRED}|${BOOTH_IDS.join(",")}`;
+const IN_BOOTHS = BOOTH_IDS.map(() => "?").join(",");
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT)`,
   `CREATE TABLE IF NOT EXISTS passports (id TEXT PRIMARY KEY, name TEXT NOT NULL, school TEXT, role TEXT, phone TEXT, nkey TEXT UNIQUE, created INTEGER NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS stamps (pid TEXT NOT NULL, booth TEXT NOT NULL, at INTEGER NOT NULL, via TEXT, PRIMARY KEY (pid, booth)) WITHOUT ROWID`,
   `CREATE INDEX IF NOT EXISTS stamps_booth ON stamps (booth, at)`,
   ...REDEEMS,
+  ...COUNTS,
   `CREATE TABLE IF NOT EXISTS attempts (k TEXT PRIMARY KEY, n INTEGER NOT NULL, until INTEGER NOT NULL)`,
 ];
 
@@ -40,18 +49,58 @@ async function setup(env) {
   await db.batch(stmts);
 }
 
+/**
+ * Adds tables missing from older databases and rebuilds the running totals from the real data.
+ * Runs once per schema version (checked with one tiny read per Worker instance), in one transaction.
+ */
+async function migrate(env) {
+  const db = env.DB;
+  await db.batch([
+    ...[...REDEEMS, ...COUNTS].map((q) => db.prepare(q)),
+    db.prepare("DELETE FROM counts"),
+    db.prepare("DELETE FROM completed"),
+    db.prepare("INSERT INTO counts (k, n) SELECT 'b:' || booth, COUNT(*) FROM stamps GROUP BY booth"),
+    db.prepare("INSERT INTO counts (k, n) SELECT 'p', COUNT(*) FROM passports"),
+    db.prepare("INSERT INTO counts (k, n) SELECT 'r:' || COALESCE(role, ''), COUNT(*) FROM passports GROUP BY role"),
+    db.prepare(`INSERT INTO completed (pid, at) SELECT pid, MAX(at) FROM stamps WHERE booth IN (${IN_BOOTHS}) GROUP BY pid HAVING COUNT(*) >= ?`).bind(...BOOTH_IDS, REQUIRED),
+    db.prepare("INSERT INTO counts (k, n) SELECT 'done', COUNT(*) FROM completed"),
+    db.prepare("INSERT INTO counts (k, n) SELECT 'rd', COUNT(*) FROM redeems"),
+    db.prepare("INSERT INTO meta (k, v) VALUES ('schema', ?) ON CONFLICT (k) DO UPDATE SET v = excluded.v").bind(SCHEMA_V),
+  ]);
+}
+
 export async function master(env) {
   if (MASTER) return MASTER;
-  let row = null;
-  try { row = await env.DB.prepare("SELECT v FROM meta WHERE k = 'master'").first(); } catch { /* no tables yet */ }
-  if (!row) {
+  let m = {};
+  try {
+    const { results } = await env.DB.prepare("SELECT k, v FROM meta WHERE k IN ('master', 'schema')").all();
+    m = Object.fromEntries(results.map((r) => [r.k, r.v]));
+  } catch { /* no tables yet */ }
+  if (!m.master) {
     await setup(env);
-    row = await env.DB.prepare("SELECT v FROM meta WHERE k = 'master'").first();
+    m.master = (await env.DB.prepare("SELECT v FROM meta WHERE k = 'master'").first()).v;
   }
-  // databases created before the ticket-redeem flow have no redeems table yet
-  await env.DB.batch(REDEEMS.map((q) => env.DB.prepare(q)));
-  MASTER = b64u.dec(row.v);
+  if (m.schema !== SCHEMA_V) await migrate(env);
+  MASTER = b64u.dec(m.master);
   return MASTER;
+}
+
+// ---------- running totals ----------
+/**
+ * Counter bump that only applies when the statement just before it (in the same batch = same transaction)
+ * changed a row, so a record and its total can never drift apart, even if a request dies halfway.
+ */
+export const bumpIfChanged = (env, k, d = 1) =>
+  env.DB.prepare("INSERT INTO counts (k, n) SELECT ?1, ?2 WHERE changes() > 0 ON CONFLICT (k) DO UPDATE SET n = n + ?2").bind(k, d);
+/** run `stmt`; if it changed a row, bump each key in the same transaction → was a row changed? */
+export async function writeCounted(env, stmt, keys, d = 1) {
+  const res = await env.DB.batch([stmt, ...keys.map((k) => bumpIfChanged(env, k, d))]);
+  return res[0].meta.changes > 0;
+}
+export async function readCounts(env, keys) {
+  const q = keys ? `SELECT k, n FROM counts WHERE k IN (${keys.map(() => "?").join(",")})` : "SELECT k, n FROM counts";
+  const { results } = await env.DB.prepare(q).bind(...(keys || [])).all();
+  return Object.fromEntries(results.map((r) => [r.k, r.n]));
 }
 
 // ---------- secrets & tokens ----------
@@ -150,19 +199,25 @@ export async function passportState(env, pid) {
   return { passport, stamps, redeem: d ? { at: d.at, by: d.staff || null } : null };
 }
 
-export async function addStamp(env, pid, booth, at, via) {
-  const r = await env.DB.prepare("INSERT OR IGNORE INTO stamps (pid, booth, at, via) VALUES (?, ?, ?, ?)").bind(pid, booth, at, via).run();
-  return r.meta.changes > 0;
-}
+export const addStamp = (env, pid, booth, at, via) =>
+  writeCounted(env, env.DB.prepare("INSERT OR IGNORE INTO stamps (pid, booth, at, via) VALUES (?, ?, ?, ?)").bind(pid, booth, at, via), ["b:" + booth]);
 
-export async function hasAllStamps(env, pid) {
-  const r = await env.DB.prepare(`SELECT COUNT(*) AS n FROM stamps WHERE pid = ? AND booth IN (${BOOTH_IDS.map(() => "?").join(",")})`).bind(pid, ...BOOTH_IDS).first();
-  return r.n >= REQUIRED;
+export const stampCount = (stamps) => BOOTH_IDS.filter((b) => stamps[b]).length;
+
+/** after a new stamp: the first time a passport reaches REQUIRED, count it as completed (once, even under races) */
+export async function noteProgress(env, pid, stamps) {
+  if (stampCount(stamps) < REQUIRED) return;
+  await writeCounted(env, env.DB.prepare("INSERT OR IGNORE INTO completed (pid, at) VALUES (?, ?)").bind(pid, Date.now()), ["done"]);
 }
 
 // ---------- prize counter ----------
 /** staff scanned a complete ticket: record it once (a second scan of the same ticket changes nothing) */
 export async function redeemTicket(env, pid, by) {
-  const r = await env.DB.prepare("INSERT OR IGNORE INTO redeems (pid, at, staff) VALUES (?, ?, ?)").bind(pid, Date.now(), by).run();
-  return r.meta.changes > 0;
+  return writeCounted(env, env.DB.prepare("INSERT OR IGNORE INTO redeems (pid, at, staff) VALUES (?, ?, ?)").bind(pid, Date.now(), by), ["rd"]);
+}
+export const unredeemTicket = (env, pid) => writeCounted(env, env.DB.prepare("DELETE FROM redeems WHERE pid = ?").bind(pid), ["rd"], -1);
+/** the participant's phone waits on this while at the prize counter: one indexed row instead of the whole passport */
+export async function redeemState(env, pid) {
+  const d = await env.DB.prepare("SELECT at, staff FROM redeems WHERE pid = ?").bind(pid).first();
+  return d ? { at: d.at, by: d.staff || null } : null;
 }

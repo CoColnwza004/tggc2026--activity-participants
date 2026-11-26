@@ -4,7 +4,7 @@ import { EVENT, BOOTH_IDS } from "../shared/event.js";
 import { parsePayload } from "../shared/otp.js";
 import {
   json, fail, body, clientIp, master, passToken, passFromReq, verifyCode, isLimited, bump,
-  newId, normName, clean, passportState, addStamp,
+  newId, normName, clean, passportState, addStamp, bumpIfChanged, noteProgress, redeemState,
 } from "../shared/server.js";
 
 const ROLES = new Set(["student", "teacher", "guest"]);
@@ -35,8 +35,14 @@ async function join(env, req) {
   let id = null, recovered = false;
   for (let i = 0; i < 4 && !id; i++) {
     const cand = newId();
-    const r = await env.DB.prepare("INSERT INTO passports (id, name, school, role, phone, nkey, created) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING RETURNING id")
-      .bind(cand, name, school, role, phone, nkey, Date.now()).first();
+    // new passport + its totals in one transaction (each bump applies only if the row before it changed)
+    const [ins] = await env.DB.batch([
+      env.DB.prepare("INSERT INTO passports (id, name, school, role, phone, nkey, created) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING RETURNING id")
+        .bind(cand, name, school, role, phone, nkey, Date.now()),
+      bumpIfChanged(env, "p"),
+      bumpIfChanged(env, "r:" + role),
+    ]);
+    const r = ins.results[0];
     if (r) { id = r.id; break; }
     const ex = await env.DB.prepare("SELECT id FROM passports WHERE nkey = ?").bind(nkey).first();
     if (ex) { id = ex.id; recovered = true; } // same phone + same name = same person on a new phone
@@ -72,6 +78,7 @@ async function stamp(env, req) {
   }
   const fresh = await addStamp(env, pid, p.booth, Math.min(at, Date.now()), p.win != null ? "qr" : "code");
   const state = await passportState(env, pid);
+  if (fresh) await noteProgress(env, pid, state.stamps);
   return json({ ok: true, booth: p.booth, fresh, ...state, now: Date.now() });
 }
 
@@ -86,6 +93,11 @@ export default {
       switch (route) {
         case "POST /api/join": return await join(env, req);
         case "GET /api/me": return await me(env, req);
+        case "GET /api/ticket": {
+          const pid = await passFromReq(env, req);
+          if (!pid) return fail(401, "auth", "ไม่พบสมุดสะสมตรา");
+          return json({ ok: true, redeem: await redeemState(env, pid), now: Date.now() });
+        }
         case "POST /api/stamp": return await stamp(env, req);
         case "GET /api/ping": return json({ ok: true, now: Date.now() });
       }

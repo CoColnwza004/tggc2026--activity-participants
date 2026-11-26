@@ -611,7 +611,11 @@ function watchRedeem() {
   if (view !== "prize" || S.redeem || !S.pass || count() < TOTAL || DEMO) return;
   watchT = setTimeout(async () => {
     if (!document.hidden && view === "prize" && !S.redeem) {
-      try { applyServer(await api("/api/me")); } catch { /* keep waiting */ }
+      try {
+        // light check (one row); fetch the full passport only once the ticket has been scanned
+        const t = await api("/api/ticket");
+        if (t.redeem) applyServer(await api("/api/me"));
+      } catch { /* keep waiting */ }
       if (S.redeem) { render(); return; }
     }
     watchRedeem();

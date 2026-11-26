@@ -3,7 +3,7 @@
 import { EVENT, BOOTH_IDS, REQUIRED } from "../shared/event.js";
 import {
   json, fail, body, clientIp, master, boothSecret, staffToken, staffFromReq,
-  isLimited, bump, passportState, addStamp, clean, hasAllStamps, redeemTicket,
+  isLimited, bump, passportState, addStamp, clean, redeemTicket, unredeemTicket, readCounts, noteProgress, stampCount,
 } from "../shared/server.js";
 
 const STATIONS = [...BOOTH_IDS, EVENT.prizePoint.id];
@@ -35,32 +35,26 @@ async function login(env, req) {
 
 async function stationStats(env, id) {
   const [c, last] = await env.DB.batch([
-    env.DB.prepare(id === EVENT.prizePoint.id ? "SELECT COUNT(*) AS n FROM redeems" : "SELECT COUNT(*) AS n FROM stamps WHERE booth = ?").bind(...(id === EVENT.prizePoint.id ? [] : [id])),
+    env.DB.prepare("SELECT n FROM counts WHERE k = ?").bind(id === EVENT.prizePoint.id ? "rd" : "b:" + id),
     id === EVENT.prizePoint.id
       ? env.DB.prepare(`SELECT r.pid, r.at, r.staff, p.name, p.school FROM redeems r JOIN passports p ON p.id = r.pid
                          ORDER BY r.at DESC LIMIT 40`)
       : env.DB.prepare(`SELECT s.pid, s.at, s.via, p.name, p.school FROM stamps s JOIN passports p ON p.id = s.pid
                          WHERE s.booth = ? ORDER BY s.at DESC LIMIT 8`).bind(id),
   ]);
-  return { count: c.results[0].n, recent: last.results };
+  return { count: c.results[0]?.n || 0, recent: last.results };
 }
 
 async function summary(env) {
   await master(env);
-  const db = env.DB;
-  const [pc, bc, comp, rc, roles] = await db.batch([
-    db.prepare("SELECT COUNT(*) AS n FROM passports"),
-    db.prepare("SELECT booth, COUNT(*) AS n FROM stamps GROUP BY booth"),
-    db.prepare(`SELECT COUNT(*) AS n FROM (SELECT pid FROM stamps WHERE booth IN (${BOOTH_IDS.map(() => "?").join(",")}) GROUP BY pid HAVING COUNT(*) >= ?)`).bind(...BOOTH_IDS, REQUIRED),
-    db.prepare("SELECT COUNT(*) AS n FROM redeems"),
-    db.prepare("SELECT role, COUNT(*) AS n FROM passports GROUP BY role"),
-  ]);
+  const c = await readCounts(env); // ~30 small rows: kept up to date as stamps, passports and tickets come in
+  const pick = (prefix) => Object.fromEntries(Object.entries(c).filter(([k]) => k.startsWith(prefix)).map(([k, n]) => [k.slice(prefix.length), n]));
   return {
-    passports: pc.results[0].n,
-    booths: Object.fromEntries(bc.results.map((r) => [r.booth, r.n])),
-    completed: comp.results[0].n,
-    redeemed: rc.results[0].n || 0,
-    roles: Object.fromEntries(roles.results.map((r) => [r.role, r.n])),
+    passports: c.p || 0,
+    booths: pick("b:"),
+    completed: c.done || 0,
+    redeemed: c.rd || 0,
+    roles: pick("r:"),
   };
 }
 
@@ -120,7 +114,9 @@ async function api(env, req, url) {
     const s0 = await passportState(env, b.pid);
     if (!s0) return fail(404, "nf", "ไม่พบสมุดรหัสนี้");
     const fresh = await addStamp(env, b.pid, b.booth, Date.now(), "staff:" + who.name);
-    return json({ ok: true, fresh, ...(await passportState(env, b.pid)), now: Date.now() });
+    const s1 = await passportState(env, b.pid);
+    if (fresh) await noteProgress(env, b.pid, s1.stamps);
+    return json({ ok: true, fresh, ...s1, now: Date.now() });
   }
   if (route === "POST /api/redeem") {
     // prize counter: staff scanned the participant's ticket → record it once; the participant then fills in a raffle slip
@@ -129,7 +125,7 @@ async function api(env, req, url) {
     const s0 = await passportState(env, b.pid);
     if (!s0) return fail(404, "nf", "ไม่พบตั๋ว/สมุดรหัสนี้");
     if (s0.redeem) return json({ ok: true, fresh: false, ...s0, now: Date.now() });
-    if (!(await hasAllStamps(env, b.pid))) return fail(400, "incomplete", "ยังสะสมตราไม่ครบ ยังไม่มีสิทธิ์");
+    if (stampCount(s0.stamps) < REQUIRED) return fail(400, "incomplete", "ยังสะสมตราไม่ครบ ยังไม่มีสิทธิ์");
     const fresh = await redeemTicket(env, b.pid, who.name);
     return json({ ok: true, fresh, ...(await passportState(env, b.pid)), now: Date.now() });
   }
@@ -148,7 +144,7 @@ async function api(env, req, url) {
     // undo a ticket scanned by mistake (admin only)
     const b = await body(req);
     if (!/^G[0-9A-Z]{6}$/.test(b.pid || "")) return fail(400, "bad", "ข้อมูลไม่ถูกต้อง");
-    await env.DB.prepare("DELETE FROM redeems WHERE pid = ?").bind(b.pid).run();
+    await unredeemTicket(env, b.pid);
     return json({ ok: true, ...(await passportState(env, b.pid)), now: Date.now() });
   }
   if (route === "POST /api/admin/reset") {
@@ -158,6 +154,8 @@ async function api(env, req, url) {
     await env.DB.batch([
       env.DB.prepare("DELETE FROM stamps"),
       env.DB.prepare("DELETE FROM redeems"),
+      env.DB.prepare("DELETE FROM completed"),
+      env.DB.prepare("DELETE FROM counts"),
       env.DB.prepare("DELETE FROM passports"),
       env.DB.prepare("DELETE FROM attempts"),
     ]);
