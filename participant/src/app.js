@@ -7,6 +7,7 @@ import { createGlobe } from "./globe.js";
 import { stampHTML, finalSealHTML } from "./stamps.js";
 import { boothMapSVG, schoolMapSVG } from "./maps.js";
 import { loadBooths, logoUrl } from "../../shared/web/booths.js";
+import { coverArt, coverFor } from "./covers.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -240,11 +241,14 @@ function renderPassport() {
   if (!S.pass) return;
   const n = count();
   const p = S.pass;
-  $("#ppCover").innerHTML = `<div class="pp-top"><img src="assets/logo-mark.webp" alt="" width="42" height="42"><div><b>GEO PASSPORT</b><span>สมุดสะสมตรา TGGC 2026</span></div></div>
+  const cv = coverArt(p.id);
+  $("#ppCover").setAttribute("style", cv.style);
+  $("#ppCover").innerHTML = `${cv.svg}<div class="pp-top"><img src="assets/logo-mark.webp" alt="" width="42" height="42"><div><b>GEO PASSPORT</b><span>สมุดสะสมตรา TGGC 2026</span></div></div>
     <div class="pp-holder"><div><small>HOLDER · ผู้ถือสมุด</small><div class="nm">${esc(p.name)}</div></div>
       <button class="qr-btn" type="button" data-act="myqr">${icon("qr")}QR ของฉัน</button>
       <div class="sc">${esc(p.school || ROLE_TH[p.role] || "")}${p.school && ROLE_TH[p.role] ? " · " + ROLE_TH[p.role] : ""}</div>
       <div class="pp-id">${esc(p.id)}</div></div>
+    <span class="pp-ed" title="ลายสมุดของคุณ (สุ่มให้)"><small>No.${String(cv.c.no).padStart(2, "0")}</small>ลาย${esc(cv.c.th)}</span>
     <div class="pp-mrz">P&lt;THA&lt;TGGC2026&lt;&lt;${esc(p.id)}&lt;&lt;${"&lt;".repeat(20)}</div>`;
 
   $("#journey").innerHTML = `<div class="seg">${B.map((b) => `<i class="${S.stamps[b.id] ? (S.stamps[b.id].ok ? "on" : "on pending") : ""}" style="--c:${b.color}"></i>`).join("")}</div>
@@ -468,7 +472,7 @@ $("#joinForm").addEventListener("submit", async (e) => {
     const j = await api("/api/join", data);
     S.pass = { id: j.id || j.passport.id, token: j.token, name: j.passport.name, school: j.passport.school, role: j.passport.role };
     applyServer(j);
-    toast(j.recovered ? "กู้คืนสมุดสะสมตราเรียบร้อย!" : "เปิดสมุดสะสมตราสำเร็จ!");
+    toast(j.recovered ? "กู้คืนสมุดสะสมตราเรียบร้อย!" : `เปิดสมุดสำเร็จ! คุณได้สมุดลาย${coverFor(S.pass.id).th}`);
     sfx.pop(); buzz(30);
     const r = $("#joinBtn").getBoundingClientRect(); burst(r.left + r.width / 2, r.top, 60, 0.7);
     location.hash = "#/passport";

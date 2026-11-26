@@ -73,7 +73,7 @@ npx wrangler deploy -c admin/wrangler.embed.jsonc
 2. เตรียมที่เคาน์เตอร์แลกรางวัล: ใบจับฉลาก ปากกา กล่องจับฉลาก · ตอนจับรางวัล ตรวจชื่อผู้โชคดีได้ที่แอดมิน → รายชื่อผู้ยื่นตั๋ว
 3. ทดลองครบ flow ด้วยมือถือ 2 เครื่อง (เครื่องหนึ่งเปิดจอบูธ อีกเครื่องสแกน)
 4. แอดมิน → **ล้างข้อมูลทดสอบ** (พิมพ์ RESET) ก่อนเปิดงานจริง
-5. ทำป้าย QR ลิงก์เว็บผู้เข้าร่วม ติดทางเข้า/โต๊ะลงทะเบียน (ให้คนเปิดเว็บครั้งแรกตอนเน็ตยังดี)
+5. พิมพ์ `poster/booths/booth-XX.pdf` ติดแต่ละบูธ (เจ้าหน้าที่สแกนเปิดจอบูธ) · ทำป้าย QR ลิงก์เว็บผู้เข้าร่วม ติดทางเข้า/โต๊ะลงทะเบียน (ให้คนเปิดเว็บครั้งแรกตอนเน็ตยังดี)
 6. เจ้าหน้าที่ทุกบูธล็อกอินไว้ก่อนเปิดงาน · กด "เต็มจอ" · ตั้งไม่ให้จอดับ (ระบบขอ wake lock ให้แล้ว)
 
 ## ลองใช้แบบไม่ต่อเซิร์ฟเวอร์
@@ -101,6 +101,9 @@ npx wrangler dev -c staff/wrangler.jsonc --persist-to .wrangler/state --port 878
 | `assets/` | รูปที่ใช้จริง (สร้างจาก `assets-src/` ด้วย `scripts/make-assets.py`, `scripts/make-og.mjs`) |
 | `scripts/build.mjs` | build → `dist/participant`, `dist/staff` |
 | `poster/` | โปสเตอร์โปรโมท A4 (PNG 300 dpi + PDF), โพสต์ 4:5 และสตอรี่ 9:16 · สร้างใหม่ด้วย `node scripts/make-poster.mjs` · ป้ายวิธีใช้งาน `guide-participant` / `guide-staff` (A4 PNG + PDF) สร้างด้วย `node scripts/guide-shots.mjs` แล้ว `node scripts/make-guide.mjs` |
+| `poster/booths/` | **โปสเตอร์ QR ประจำบูธสำหรับเจ้าหน้าที่** 23 ใบ (A4 PDF 300 dpi แยกบูธ + `booth-posters-all.pdf` รวมทุกหน้า) ลายพื้นหลังไม่ซ้ำกันทุกบูธ · QR เปิดเว็บเจ้าหน้าที่ตรงจอบูธนั้น (`staffUrl#/s/<id>`) ใส่ PIN แล้วขึ้น QR รับตราทันที · QR บนโปสเตอร์ไม่ให้ตรา (กันถ่ายรูปแชร์) · สร้างใหม่ (ดึงชื่อ/โลโก้ที่แก้ในเว็บแอดมิน) ด้วย `node scripts/make-booth-posters.mjs` |
+| `shared/web/patterns.js` | ลายพื้นหลังภูมิศาสตร์ 24 แบบ (เส้นชั้นความสูง, กริดแผนที่, วงโคจร ฯลฯ) ใช้กับโปสเตอร์บูธ จอบูธของเจ้าหน้าที่ และปกสมุด · ลายประจำบูธ: `BOOTH_PATTERN` |
+| `participant/src/covers.js` | ปกสมุดตรา 14 ลาย สุ่มให้ตามรหัสสมุด (คนเดิมได้ลายเดิมทุกเครื่อง) |
 | `vendor/` | qrcode-generator (MIT, Kazuhiko Arase), jsQR (Apache-2.0) |
 
 ข้อมูลแผนที่โลก: world-atlas (Natural Earth, ISC/public domain)

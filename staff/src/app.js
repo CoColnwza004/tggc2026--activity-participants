@@ -7,6 +7,7 @@ import { qrSvg } from "../../shared/web/qr.js";
 import { startScanner } from "../../shared/web/scanner.js";
 import { sfx, buzz, burst } from "../../shared/web/fx.js";
 import { loadBooths, logoUrl } from "../../shared/web/booths.js";
+import { patternSvg, boothPattern } from "../../shared/web/patterns.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -61,9 +62,17 @@ function route() {
   clearTimers();
   releaseWake();
   closeCam();
-  if (!A || tokenExpired()) { A = null; saveAuth(); show("login"); $("#lgName").value = localStorage.getItem(KEY + "-name") || ""; return; }
   const h = location.hash || "#/";
   let m;
+  if (!A || tokenExpired()) {
+    A = null; saveAuth(); show("login");
+    $("#lgName").value = localStorage.getItem(KEY + "-name") || "";
+    // opened from a booth poster QR (#/s/<id>): say which screen opens after login
+    const to = (m = h.match(/^#\/s\/([a-z0-9_-]+)/)) && boothById(m[1]);
+    $("#lgFor").hidden = !to;
+    if (to) $("#lgFor").textContent = to.no ? `เข้าสู่ระบบแล้วจะเปิดจอ บูธ ${to.no} · ${to.th}` : `เข้าสู่ระบบแล้วจะเปิดจอ ${to.th}`;
+    return;
+  }
   if ((m = h.match(/^#\/s\/([a-z0-9_-]+)/)) && (BOOTH_IDS.includes(m[1]) || m[1] === PRIZE)) return station(m[1]);
   if (h === "#/lookup") return lookup();
   home();
@@ -82,7 +91,7 @@ $("#loginForm").addEventListener("submit", async (e) => {
     saveAuth();
     try { localStorage.setItem(KEY + "-name", name); } catch { /* ignore */ }
     $("#lgPin").value = "";
-    location.hash = "#/";
+    if (!/^#\/s\//.test(location.hash)) location.hash = "#/"; // keep the booth screen a poster QR asked for
     route();
   } catch (ex) { err.textContent = ex.message; err.hidden = false; }
   finally { btn.disabled = false; }
@@ -115,6 +124,8 @@ async function station(id) {
   show("station");
   const scr = $("[data-screen=station]");
   scr.style.setProperty("--c", prize ? "#c9971c" : b.color);
+  // the same background pattern as this booth's printed QR poster
+  $(".st-pat").innerHTML = prize ? "" : patternSvg(boothPattern(b.no), { w: 1200, h: 900, u: 56, sw: 1.6, seed: b.no });
   $("#stNo").textContent = prize ? "PRIZE COUNTER" : `BOOTH ${String(b.no).padStart(2, "0")} · ${b.en}`;
   $("#stName").textContent = b.th;
   const lg = $("#stLogo");

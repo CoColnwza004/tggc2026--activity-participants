@@ -313,15 +313,12 @@ a { color: var(--sea); }
 /* ---------- passport ---------- */
 .pp-cover {
   position: relative; overflow: hidden; margin-top: 4px; padding: 20px; border-radius: 26px; color: #fff; isolation: isolate;
-  background: linear-gradient(140deg, #0a4f7f 0%, var(--navy) 40%, #06395e 100%);
+  background: linear-gradient(140deg, var(--g1, #0a4f7f) 0%, var(--g2, var(--navy)) 40%, var(--g3, #06395e) 100%);
   box-shadow: 0 24px 44px -18px rgba(4, 44, 74, .6), inset 0 0 0 1px rgba(255, 255, 255, .08);
 }
-.pp-cover::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; opacity: .5;
-  background:
-    radial-gradient(circle at 92% 18%, transparent 46px, rgba(167, 213, 219, .18) 47px 48px, transparent 49px 66px, rgba(167, 213, 219, .14) 67px 68px, transparent 69px 90px, rgba(167, 213, 219, .1) 91px 92px, transparent 93px),
-    repeating-linear-gradient(115deg, rgba(255, 255, 255, .04) 0 2px, transparent 2px 9px);
-}
+.pp-pat { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; color: rgba(255, 255, 255, .17); }
+.pp-ed { display: inline-flex; align-items: baseline; gap: 8px; margin-top: 14px; padding: 4px 12px; border-radius: 999px; background: rgba(0, 0, 0, .22); border: 1px solid rgba(255, 255, 255, .18); font-size: 12.5px; font-weight: 600; line-height: 1.5; white-space: nowrap; color: var(--acc, #9ff3d4); }
+.pp-ed small { font-family: var(--f-tech); font-weight: 700; font-size: 10px; letter-spacing: .16em; color: rgba(255, 255, 255, .7); }
 .pp-cover::after { content: ""; position: absolute; right: -30px; top: -40px; width: 180px; height: 180px; z-index: -1; background: url(assets/logo-mark.webp) center/contain no-repeat; opacity: .16; filter: saturate(0) brightness(2.2); }
 .pp-top { display: flex; align-items: center; gap: 10px; }
 .pp-top img { width: 42px; height: 42px; border-radius: 12px; background: #fff; padding: 3px; }
@@ -332,10 +329,10 @@ a { color: var(--sea); }
 .pp-holder small { font-family: var(--f-tech); font-size: 10.5px; letter-spacing: .18em; color: var(--mist); display: block; }
 .pp-holder .nm { font-family: var(--f-display); font-weight: 700; font-size: 22px; line-height: 1.2; word-break: break-word; }
 .pp-holder .sc { font-size: 13.5px; color: rgba(233, 246, 248, .85); line-height: 1.35; }
-.pp-id { font-family: var(--f-tech); font-weight: 700; font-size: 17px; letter-spacing: .14em; color: #9ff3d4; }
-.qr-btn { grid-row: span 3; display: grid; justify-items: center; gap: 4px; padding: 10px 10px 8px; border-radius: 16px; border: 0; background: #fff; color: var(--navy); cursor: pointer; font-size: 11.5px; font-weight: 700; }
+.pp-id { font-family: var(--f-tech); font-weight: 700; font-size: 17px; letter-spacing: .14em; color: var(--acc, #9ff3d4); }
+.qr-btn { grid-row: span 3; display: grid; justify-items: center; gap: 4px; padding: 10px 10px 8px; border-radius: 16px; border: 0; background: #fff; color: var(--g3, var(--navy)); cursor: pointer; font-size: 11.5px; font-weight: 700; }
 .qr-btn .ico { width: 40px; height: 40px; }
-.pp-mrz { margin-top: 16px; font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .12em; color: rgba(167, 213, 219, .55); white-space: nowrap; overflow: hidden; }
+.pp-mrz { margin-top: 10px; font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .12em; color: rgba(167, 213, 219, .55); white-space: nowrap; overflow: hidden; }
 
 .journey { margin: 16px 2px 4px; }
 .seg { display: flex; gap: 3px; }

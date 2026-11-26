@@ -24,6 +24,7 @@
     <span class="badge">STAFF · เจ้าหน้าที่</span>
     <h1>ระบบเจ้าหน้าที่บูธ</h1>
     <p>แสดง QR รับตรา · สแกนสมุด · เคาน์เตอร์แลกรางวัล</p>
+    <p class="for" id="lgFor" hidden></p>
     <label class="field"><span>ชื่อเจ้าหน้าที่</span><input class="input" id="lgName" maxlength="40" placeholder="เช่น ครูสมชาย" autocomplete="nickname" required></label>
     <label class="field"><span>PIN</span><input class="input pin" id="lgPin" type="password" inputmode="numeric" maxlength="12" placeholder="••••••" required></label>
     <p class="err" id="lgErr" hidden></p>
@@ -52,7 +53,7 @@
 
 <!-- ============ STATION DISPLAY ============ -->
 <section class="screen station" data-screen="station" hidden>
-  <div class="st-bg" aria-hidden="true"><i></i><i></i></div>
+  <div class="st-bg" aria-hidden="true"><i></i><i></i><div class="st-pat"></div></div>
   <header class="st-bar">
     <a class="icon-btn glass" href="#/" aria-label="เปลี่ยนจุด">${back}</a>
     <img class="st-logo" id="stLogo" alt="" hidden><div class="st-name"><small id="stNo"></small><b id="stName"></b></div>

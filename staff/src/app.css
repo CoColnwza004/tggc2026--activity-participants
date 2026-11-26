@@ -40,6 +40,7 @@ a { color: var(--mist); }
 .login { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; position: relative; overflow: hidden; }
 .login-glow { position: absolute; inset: 0; background: radial-gradient(60% 40% at 50% 0%, rgba(10, 152, 199, .45), transparent), radial-gradient(50% 40% at 0% 100%, rgba(44, 195, 148, .3), transparent); }
 .login-card { position: relative; width: min(400px, 100%); display: grid; gap: 14px; padding: 26px 22px; border-radius: 28px; text-align: center; background: rgba(10, 49, 80, .75); border: 1px solid var(--line); box-shadow: 0 30px 70px rgba(0, 0, 0, .45); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.login-card .for { margin: 0; padding: 10px 12px; border-radius: 14px; background: rgba(44, 195, 148, .16); color: #9ff3d4; font-weight: 600; font-size: 14.5px; line-height: 1.4; }
 .login-logo { width: 150px; height: auto; margin: 0 auto; background: #fff; border-radius: 18px; padding: 8px 12px; }
 .badge { justify-self: center; padding: 4px 12px; border-radius: 999px; background: rgba(44, 195, 148, .15); border: 1px solid rgba(44, 195, 148, .5); color: #9ff3d4; font-family: var(--f-tech); font-weight: 700; font-size: 12px; letter-spacing: .16em; }
 .login h1 { margin: 0; font-family: var(--f-display); font-size: 26px; }
@@ -75,6 +76,8 @@ a { color: var(--mist); }
 .st-bg { position: absolute; inset: 0; z-index: -1; background: radial-gradient(90% 70% at 50% 30%, color-mix(in srgb, var(--c) 55%, #021b2e), #021b2e 70%); }
 .st-bg i { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; left: -20vmax; top: -30vmax; background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 45%, transparent), transparent); animation: drift 18s ease-in-out infinite alternate; }
 .st-bg i + i { left: auto; right: -30vmax; top: auto; bottom: -30vmax; animation-duration: 24s; }
+.st-pat { position: absolute; inset: 0; color: rgba(255, 255, 255, .11); }
+.st-pat svg { width: 100%; height: 100%; display: block; }
 @keyframes drift { to { transform: translate(10vmax, 8vmax); } }
 .st-bar { display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 6px; }
 .st-name small { display: block; font-family: var(--f-tech); font-weight: 700; letter-spacing: .2em; font-size: 12px; opacity: .8; }
