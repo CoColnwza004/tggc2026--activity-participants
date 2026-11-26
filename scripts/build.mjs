@@ -1,4 +1,4 @@
-// Builds both sites into dist/participant and dist/staff.
+// Builds the three sites into dist/participant, dist/staff and dist/admin.
 // - JS: bundled + minified with esbuild (code-split: the QR libraries load only when needed)
 // - CSS: minified and inlined into the HTML (no extra request before first paint)
 // - every file in assets/ gets a content hash in its name → cached for a year (immutable)
@@ -90,10 +90,11 @@ async function site(name, { sw = true, extraHeaders = "" } = {}) {
   }
 
   writeFileSync(join(out, "_headers"), HEADERS + extraHeaders);
-  writeFileSync(join(out, "robots.txt"), name === "staff" ? "User-agent: *\nDisallow: /\n" : "User-agent: *\nAllow: /\n");
+  writeFileSync(join(out, "robots.txt"), name !== "participant" ? "User-agent: *\nDisallow: /\n" : "User-agent: *\nAllow: /\n");
   const size = (p) => readFileSync(p).length;
   console.log(`${name}: index.html ${(size(join(out, "index.html")) / 1024).toFixed(1)} KB · ${jsFiles.length} js files (${(jsFiles.reduce((a, f) => a + size(join(out, f)), 0) / 1024).toFixed(1)} KB) · entry ${(size(join(out, entry)) / 1024).toFixed(1)} KB`);
 }
 
 await site("participant");
 await site("staff", { extraHeaders: "/*\n  X-Robots-Tag: noindex, nofollow\n" });
+await site("admin", { sw: false, extraHeaders: "/*\n  X-Robots-Tag: noindex, nofollow\n" });

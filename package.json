@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "dev": "node scripts/build.mjs && wrangler dev -c participant/wrangler.jsonc -c staff/wrangler.jsonc",
-    "deploy": "node scripts/build.mjs && wrangler deploy -c participant/wrangler.jsonc && wrangler deploy -c staff/wrangler.jsonc"
+    "dev": "node scripts/build.mjs && wrangler dev -c participant/wrangler.jsonc -c staff/wrangler.jsonc -c admin/wrangler.jsonc",
+    "deploy": "node scripts/build.mjs && wrangler deploy -c participant/wrangler.jsonc && wrangler deploy -c staff/wrangler.jsonc && wrangler deploy -c admin/wrangler.jsonc"
   },
   "devDependencies": {
     "esbuild": "0.24.2",

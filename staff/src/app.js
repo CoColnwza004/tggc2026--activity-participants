@@ -1,11 +1,12 @@
 // TGGC 2026 staff site: rotating booth QR (works offline once logged in), scan passports,
-// prize counter (ticket check → raffle slip), admin dashboard.
+// prize counter (ticket check → raffle slip). The admin dashboard is its own site (admin/).
 import { EVENT, BOOTH_IDS, REQUIRED, boothById } from "../../shared/event.js";
 import { STEP, windowAt, codeFor, makePayload } from "../../shared/otp.js";
 import { icon } from "../../shared/web/icons.js";
 import { qrSvg } from "../../shared/web/qr.js";
 import { startScanner } from "../../shared/web/scanner.js";
 import { sfx, buzz, burst } from "../../shared/web/fx.js";
+import { loadBooths, logoUrl } from "../../shared/web/booths.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -64,7 +65,6 @@ function route() {
   const h = location.hash || "#/";
   let m;
   if ((m = h.match(/^#\/s\/([a-z0-9_-]+)/)) && (BOOTH_IDS.includes(m[1]) || m[1] === PRIZE)) return station(m[1]);
-  if (h === "#/admin" && A.role === "admin") return admin();
   if (h === "#/lookup") return lookup();
   home();
 }
@@ -94,7 +94,8 @@ function home() {
   show("home");
   $("#whoami").textContent = `${A.name} · ${A.role === "admin" ? "แอดมิน" : "เจ้าหน้าที่"}`;
   $("#adminCard").hidden = A.role !== "admin";
-  $("#stations").innerHTML = EVENT.booths.map((b) => `<a class="station-card" href="#/s/${b.id}" style="--c:${b.color}">${icon(b.icon)}<span class="no">BOOTH ${String(b.no).padStart(2, "0")} · ${esc(b.en)}</span><b>${esc(b.th)}</b><small>${esc(b.place)}</small></a>`).join("");
+  $("#adminCard").href = EVENT.adminUrl;
+  $("#stations").innerHTML = EVENT.booths.map((b) => `<a class="station-card" href="#/s/${b.id}" style="--c:${b.color}">${b.logo ? `<img class="slogo" src="${logoUrl(b)}" alt="" loading="lazy">` : icon(b.icon)}<span class="no">BOOTH ${String(b.no).padStart(2, "0")} · ${esc(b.en)}</span><b>${esc(b.th)}</b><small>${esc(b.place)}</small></a>`).join("");
   $("#prizeStation").innerHTML = `<a class="station-card" href="#/s/${PRIZE}" style="--c:#c9971c">${icon("gift")}<span class="no">PRIZE COUNTER</span><b>${esc(EVENT.prizePoint.name)}</b><small>${esc(EVENT.prizePoint.place)}</small></a>`;
 }
 
@@ -116,6 +117,9 @@ async function station(id) {
   scr.style.setProperty("--c", prize ? "#c9971c" : b.color);
   $("#stNo").textContent = prize ? "PRIZE COUNTER" : `BOOTH ${String(b.no).padStart(2, "0")} · ${b.en}`;
   $("#stName").textContent = b.th;
+  const lg = $("#stLogo");
+  lg.hidden = prize || !b.logo;
+  if (!lg.hidden) lg.src = logoUrl(b);
   $("#howTxt").textContent = prize
     ? "สแกนตั๋วในมือถือผู้เข้าร่วม แล้วให้เขียนชื่อลงใบจับฉลาก"
     : "ผู้เข้าร่วมสแกน QR ด้วยเว็บสะสมตรา หรือกล้องมือถือ · หรือพิมพ์รหัส 6 หลักในเว็บ";
@@ -313,65 +317,17 @@ $("#lookupOut").addEventListener("click", async (e) => {
   catch (ex) { toast(ex.message, true); c.disabled = false; }
 });
 
-// ---------------------------------------------------------------- admin
-let S = null;
-async function admin() {
-  show("admin");
-  await loadAdmin();
-  timers.push(setInterval(() => { if (!document.hidden) loadAdmin(true); }, 30000));
-}
-async function loadAdmin(quiet = false) {
-  try { S = await api("/api/admin/summary"); renderAdmin(); if (!quiet) loadRedeemed(); }
-  catch (e) { $("#admUpdated").textContent = e.message; }
-}
-function renderAdmin() {
-  $("#admUpdated").textContent = "อัปเดต " + fmt(Date.now());
-  const k = [
-    ["ผู้เปิดสมุด", S.passports, `นร. ${S.roles.student || 0} · ครู ${S.roles.teacher || 0} · ทั่วไป ${S.roles.guest || 0}`],
-    ["ตราที่ให้ทั้งหมด", Object.values(S.booths).reduce((a, b) => a + b, 0), "ดวง"],
-    ["สะสมครบ", S.completed, S.passports ? Math.round((S.completed / S.passports) * 100) + "% ของผู้เปิดสมุด" : ""],
-    ["ยื่นตั๋วแล้ว", S.redeemed, "= ใบจับฉลากในกล่อง"],
-    ["ครบแต่ยังไม่ยื่น", Math.max(0, S.completed - S.redeemed), "คน"],
-  ];
-  $("#kpis").innerHTML = k.map(([a, b, c]) => `<div class="kpi"><span>${a}</span><b>${Number(b).toLocaleString("th-TH")}</b><small>${c}</small></div>`).join("");
-  const max = Math.max(1, ...Object.values(S.booths));
-  $("#boothBars").innerHTML = EVENT.booths.map((b) => `<div class="barrow" style="--c:${b.color}"><span>${b.no}. ${esc(b.th)}</span><span class="track"><i style="width:${((S.booths[b.id] || 0) / max) * 100}%"></i></span><b>${S.booths[b.id] || 0}</b></div>`).join("");
-}
-
-// everyone who handed in a ticket (check a name drawn from the box)
-let RD = [];
-async function loadRedeemed() {
-  try { RD = (await api("/api/admin/redeemed")).list; renderRedeemed(); }
-  catch (e) { $("#rdInfo").textContent = e.message; }
-}
-function renderRedeemed() {
-  const q = $("#rdQ").value.trim().toLowerCase();
-  const list = q ? RD.filter((r) => [r.name, r.school, r.pid].some((v) => String(v || "").toLowerCase().includes(q))) : RD;
-  $("#rdInfo").textContent = q ? `พบ ${list.length} จาก ${RD.length} คน` : `ทั้งหมด ${RD.length} คน`;
-  $("#rdList").innerHTML = list.slice(0, 200).map((r) => `<div class="it"><b>${esc(r.name)}</b><time>${fmt(r.at)}</time><small>${esc(r.school || ROLE_TH[r.role] || "")} · ${esc(r.pid)}${r.staff ? " · " + esc(r.staff) : ""}</small></div>`).join("")
-    + (list.length > 200 ? `<p class="help">แสดง 200 รายการแรก พิมพ์ค้นหาเพื่อกรอง</p>` : "");
-}
-$("#rdQ").addEventListener("input", renderRedeemed);
-$("#rdForm").addEventListener("submit", (e) => { e.preventDefault(); loadRedeemed(); });
-$("#admRefresh").onclick = () => loadAdmin();
-$("#exportBtn").onclick = async () => {
-  try {
-    const r = await api("/api/admin/export");
-    const blob = await r.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `tggc2569-สะสมตรา-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "")}.csv`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  } catch (ex) { toast(ex.message, true); }
-};
-$("#resetBtn").onclick = async () => {
-  if ($("#resetTxt").value.trim() !== "RESET") { toast("พิมพ์ RESET ให้ถูกต้องก่อน", true); return; }
-  if (!confirm("ลบข้อมูลทั้งหมดจริงหรือไม่? ย้อนกลับไม่ได้")) return;
-  try { S = await api("/api/admin/reset", { confirm: "RESET" }); $("#resetTxt").value = ""; renderAdmin(); loadRedeemed(); toast("ล้างข้อมูลแล้ว"); }
-  catch (ex) { toast(ex.message, true); }
-};
-
 // ---------------------------------------------------------------- boot
 route();
+// booth names/logos edited on the admin site: refresh the screen that shows them
+loadBooths(() => {
+  if (!$("[data-screen=home]").hidden) home();
+  else if (curStation && curStation !== PRIZE && !$("[data-screen=station]").hidden) {
+    const b = boothById(curStation);
+    $("#stNo").textContent = `BOOTH ${String(b.no).padStart(2, "0")} · ${b.en}`;
+    $("#stName").textContent = b.th;
+    $("#stLogo").hidden = !b.logo;
+    if (b.logo) $("#stLogo").src = logoUrl(b);
+  }
+});
 if ("serviceWorker" in navigator && location.protocol === "https:") addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));

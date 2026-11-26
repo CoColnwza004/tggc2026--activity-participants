@@ -6,6 +6,7 @@ import { burst, fireworks, sfx, sound, buzz } from "../../shared/web/fx.js";
 import { createGlobe } from "./globe.js";
 import { stampHTML, finalSealHTML } from "./stamps.js";
 import { boothMapSVG, schoolMapSVG } from "./maps.js";
+import { loadBooths, logoUrl } from "../../shared/web/booths.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -160,7 +161,7 @@ function fillStatic() {
 function boothCard(b) {
   const got = S.stamps[b.id];
   return `<button class="bcard" type="button" data-booth="${b.id}" style="--c:${b.color}">
-    <div class="bcard-top"><span class="no">BOOTH ${String(b.no).padStart(2, "0")}</span>${icon(b.icon)}${got ? `<span class="got">${icon("check")}ได้ตราแล้ว</span>` : ""}</div>
+    <div class="bcard-top"><span class="no">BOOTH ${String(b.no).padStart(2, "0")}</span>${b.logo ? `<img class="blogo" src="${logoUrl(b)}" alt="" loading="lazy" decoding="async">` : icon(b.icon)}${got ? `<span class="got">${icon("check")}ได้ตราแล้ว</span>` : ""}</div>
     <div class="bcard-body"><b>${esc(b.th)}</b><span>${esc(b.en)}</span><small>${icon("place")}${esc(b.place)}</small></div></button>`;
 }
 
@@ -175,7 +176,7 @@ function showBooth(id) {
   }
   const got = S.stamps[id];
   openSheet(`<div class="bs-head">${got ? stampHTML(b, S.pass?.id || "") : `<div class="ghost-stamp" style="color:${b.color};border-color:${b.color}66">${icon(b.icon)}</div>`}
-      <div><span class="eyebrow" style="color:${b.color}">BOOTH ${String(b.no).padStart(2, "0")} · ${esc(b.en)}</span><h2>${esc(b.th)}</h2></div></div>
+      <div>${b.logo ? `<img class="bs-logo" src="${logoUrl(b)}" alt="โลโก้ ${esc(b.th)}">` : ""}<span class="eyebrow" style="color:${b.color}">BOOTH ${String(b.no).padStart(2, "0")} · ${esc(b.en)}</span><h2>${esc(b.th)}</h2></div></div>
     ${b.desc ? `<p style="margin:8px 0 0;font-size:15.5px">${esc(b.desc)}</p>` : ""}
     <div class="meta"><span>${icon("place")}${esc(b.place)}</span>
     ${got ? `<span style="color:var(--green);font-weight:600">${icon("check")}ได้รับตราเมื่อ ${fmtTime(got.at)}${got.ok ? "" : " (รอซิงก์)"}</span>` : `<span>${icon("scan")}ร่วมกิจกรรมเสร็จแล้ว สแกน QR บนจอเจ้าหน้าที่เพื่อรับตรา</span>`}</div>
@@ -668,6 +669,7 @@ setInterval(() => { if (view === "home") renderNow(); }, 60000);
 
 // ---------------------------------------------------------------- boot
 fillStatic();
+loadBooths(() => { fillStatic(); render(); }); // names/logos edited on the admin site
 if (DEMO) $("#demoFlag").hidden = false;
 route();
 flush();

@@ -4,7 +4,7 @@ import { EVENT, BOOTH_IDS } from "../shared/event.js";
 import { parsePayload } from "../shared/otp.js";
 import {
   json, fail, body, clientIp, master, passToken, passFromReq, verifyCode, isLimited, bump,
-  newId, normName, clean, passportState, addStamp, bumpIfChanged, noteProgress, redeemState,
+  newId, normName, clean, passportState, addStamp, bumpIfChanged, noteProgress, redeemState, boothConfig, logoResponse,
 } from "../shared/server.js";
 
 const ROLES = new Set(["student", "teacher", "guest"]);
@@ -90,6 +90,8 @@ export default {
     try {
       await master(env); // creates tables on first use; cached per isolate afterwards
       const route = req.method + " " + url.pathname;
+      const lm = req.method === "GET" && url.pathname.match(/^\/api\/logo\/(b\d+)$/);
+      if (lm && BOOTH_IDS.includes(lm[1])) return await logoResponse(env, lm[1]);
       switch (route) {
         case "POST /api/join": return await join(env, req);
         case "GET /api/me": return await me(env, req);
@@ -100,6 +102,7 @@ export default {
         }
         case "POST /api/stamp": return await stamp(env, req);
         case "GET /api/ping": return json({ ok: true, now: Date.now() });
+        case "GET /api/booths": return json({ ok: true, ...(await boothConfig(env)), now: Date.now() });
       }
       return fail(404, "nf", "not found");
     } catch (e) {

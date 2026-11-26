@@ -14,16 +14,23 @@ const COUNTS = [
   `CREATE TABLE IF NOT EXISTS counts (k TEXT PRIMARY KEY, n INTEGER NOT NULL) WITHOUT ROWID`,
   `CREATE TABLE IF NOT EXISTS completed (pid TEXT PRIMARY KEY, at INTEGER NOT NULL) WITHOUT ROWID`,
 ];
+// booth details edited on the admin site (override shared/event.js at runtime) + booth logos
+const BOOTH_CFG = [
+  `CREATE TABLE IF NOT EXISTS booth_cfg (id TEXT PRIMARY KEY, th TEXT, en TEXT, place TEXT, icon TEXT, descr TEXT, logo TEXT, updated INTEGER NOT NULL, staff TEXT)`,
+  `CREATE TABLE IF NOT EXISTS booth_logo (id TEXT PRIMARY KEY, v TEXT NOT NULL, mime TEXT NOT NULL, data TEXT NOT NULL)`,
+];
 // bump when the derived tables change; also rebuilt when the booth list or REQUIRED changes
-const SCHEMA_V = `4|${REQUIRED}|${BOOTH_IDS.join(",")}`;
+const SCHEMA_V = `5|${REQUIRED}|${BOOTH_IDS.join(",")}`;
+export const BUCKET = 15 * 60e3; // stamps-over-time counters: 15-minute buckets (key "t:<ms / BUCKET>")
 const IN_BOOTHS = BOOTH_IDS.map(() => "?").join(",");
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT)`,
-  `CREATE TABLE IF NOT EXISTS passports (id TEXT PRIMARY KEY, name TEXT NOT NULL, school TEXT, role TEXT, phone TEXT, nkey TEXT UNIQUE, created INTEGER NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS passports (id TEXT PRIMARY KEY, name TEXT NOT NULL, school TEXT, role TEXT, phone TEXT, nkey TEXT UNIQUE, created INTEGER NOT NULL, n INTEGER NOT NULL DEFAULT 0)`,
   `CREATE TABLE IF NOT EXISTS stamps (pid TEXT NOT NULL, booth TEXT NOT NULL, at INTEGER NOT NULL, via TEXT, PRIMARY KEY (pid, booth)) WITHOUT ROWID`,
   `CREATE INDEX IF NOT EXISTS stamps_booth ON stamps (booth, at)`,
   ...REDEEMS,
   ...COUNTS,
+  ...BOOTH_CFG,
   `CREATE TABLE IF NOT EXISTS attempts (k TEXT PRIMARY KEY, n INTEGER NOT NULL, until INTEGER NOT NULL)`,
 ];
 
@@ -55,11 +62,17 @@ async function setup(env) {
  */
 async function migrate(env) {
   const db = env.DB;
+  // passports.n (stamps per passport, for the dashboard's distribution) was added later
+  let hasN = true;
+  try { await db.prepare("SELECT n FROM passports LIMIT 0").all(); } catch { hasN = false; }
   await db.batch([
-    ...[...REDEEMS, ...COUNTS].map((q) => db.prepare(q)),
+    ...[...REDEEMS, ...COUNTS, ...BOOTH_CFG].map((q) => db.prepare(q)),
+    ...(hasN ? [] : [db.prepare("ALTER TABLE passports ADD COLUMN n INTEGER NOT NULL DEFAULT 0")]),
+    db.prepare(`UPDATE passports SET n = (SELECT COUNT(*) FROM stamps s WHERE s.pid = passports.id AND s.booth IN (${IN_BOOTHS}))`).bind(...BOOTH_IDS),
     db.prepare("DELETE FROM counts"),
     db.prepare("DELETE FROM completed"),
     db.prepare("INSERT INTO counts (k, n) SELECT 'b:' || booth, COUNT(*) FROM stamps GROUP BY booth"),
+    db.prepare(`INSERT INTO counts (k, n) SELECT 't:' || CAST(at / ${BUCKET} AS INTEGER), COUNT(*) FROM stamps GROUP BY CAST(at / ${BUCKET} AS INTEGER)`),
     db.prepare("INSERT INTO counts (k, n) SELECT 'p', COUNT(*) FROM passports"),
     db.prepare("INSERT INTO counts (k, n) SELECT 'r:' || COALESCE(role, ''), COUNT(*) FROM passports GROUP BY role"),
     db.prepare(`INSERT INTO completed (pid, at) SELECT pid, MAX(at) FROM stamps WHERE booth IN (${IN_BOOTHS}) GROUP BY pid HAVING COUNT(*) >= ?`).bind(...BOOTH_IDS, REQUIRED),
@@ -199,8 +212,17 @@ export async function passportState(env, pid) {
   return { passport, stamps, redeem: d ? { at: d.at, by: d.staff || null } : null };
 }
 
-export const addStamp = (env, pid, booth, at, via) =>
-  writeCounted(env, env.DB.prepare("INSERT OR IGNORE INTO stamps (pid, booth, at, via) VALUES (?, ?, ?, ?)").bind(pid, booth, at, via), ["b:" + booth]);
+/** new stamp → booth total, time-bucket total and the passport's own count, all in one transaction (only if the stamp is new) */
+export async function addStamp(env, pid, booth, at, via) {
+  const db = env.DB;
+  const res = await db.batch([
+    db.prepare("INSERT OR IGNORE INTO stamps (pid, booth, at, via) VALUES (?, ?, ?, ?)").bind(pid, booth, at, via),
+    bumpIfChanged(env, "b:" + booth),
+    bumpIfChanged(env, "t:" + Math.floor(at / BUCKET)),
+    db.prepare("UPDATE passports SET n = n + 1 WHERE id = ? AND changes() > 0").bind(pid),
+  ]);
+  return res[0].meta.changes > 0;
+}
 
 export const stampCount = (stamps) => BOOTH_IDS.filter((b) => stamps[b]).length;
 
@@ -220,4 +242,35 @@ export const unredeemTicket = (env, pid) => writeCounted(env, env.DB.prepare("DE
 export async function redeemState(env, pid) {
   const d = await env.DB.prepare("SELECT at, staff FROM redeems WHERE pid = ?").bind(pid).first();
   return d ? { at: d.at, by: d.staff || null } : null;
+}
+
+// ---------- booth details (edited on the admin site) ----------
+let BCFG = null, BCFG_AT = 0;
+/** { v, booths: { b1: { th, en, place, icon, desc, logo } } } — only the fields an admin changed; cached 20 s per instance */
+export async function boothConfig(env, fresh = false) {
+  if (!fresh && BCFG && Date.now() - BCFG_AT < 20000) return BCFG;
+  await master(env);
+  const { results } = await env.DB.prepare("SELECT id, th, en, place, icon, descr, logo, updated FROM booth_cfg").all();
+  const booths = {};
+  let v = 0;
+  for (const r of results) {
+    const o = {};
+    for (const [k, col] of [["th", "th"], ["en", "en"], ["place", "place"], ["icon", "icon"], ["desc", "descr"], ["logo", "logo"]]) if (r[col] != null && r[col] !== "") o[k] = r[col];
+    booths[r.id] = o;
+    v = Math.max(v, r.updated);
+  }
+  BCFG = { v, booths };
+  BCFG_AT = Date.now();
+  return BCFG;
+}
+export const dropBoothCache = () => { BCFG = null; };
+
+/** GET /api/logo/<booth>?v=… — the URL changes with every upload, so the image can be cached for a year */
+export async function logoResponse(env, id) {
+  await master(env);
+  const r = await env.DB.prepare("SELECT v, mime, data FROM booth_logo WHERE id = ?").bind(id).first();
+  if (!r) return new Response("not found", { status: 404, headers: { "cache-control": "no-store" } });
+  const bin = atob(r.data), u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return new Response(u, { headers: { "content-type": r.mime, "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" } });
 }

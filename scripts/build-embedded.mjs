@@ -15,7 +15,7 @@ const TYPES = {
 };
 const BIN = new Set([".png", ".jpg", ".webp"]);
 
-for (const site of ["participant", "staff"]) {
+for (const site of ["participant", "staff", "admin"]) {
   const dir = join(root, "dist", site);
   const files = {};
   (function walk(d) {
@@ -52,7 +52,7 @@ const ASSETS = {
       "referrer-policy": "strict-origin-when-cross-origin",
       "permissions-policy": "camera=(self), microphone=(), geolocation=()",
     });
-    ${site === "staff" ? 'h.set("x-robots-tag", "noindex, nofollow");' : ""}
+    ${site !== "participant" ? 'h.set("x-robots-tag", "noindex, nofollow");' : ""}
     return new Response(req.method === "HEAD" ? null : bytes(p, f), { headers: h });
   },
 };

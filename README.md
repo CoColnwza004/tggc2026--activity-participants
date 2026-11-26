@@ -3,12 +3,13 @@
 เว็บกิจกรรมบูธ **การแข่งขันอัจฉริยภาพทางด้านภูมิศาสตร์และภูมิสารสนเทศแห่งประเทศไทย ระดับมัธยมศึกษา ครั้งที่ 3**
 เสาร์ 28 พ.ย. 2569 · โรงเรียนชลประทานวิทยา จ.นนทบุรี
 
-มี 2 เว็บแยกกัน ใช้ฐานข้อมูลเดียวกัน (Cloudflare D1):
+มี 3 เว็บแยกกัน ใช้ฐานข้อมูลเดียวกัน (Cloudflare D1):
 
 | เว็บ | ใช้ทำอะไร |
 |---|---|
 | **ผู้เข้าร่วม** `participant/` | เปิดสมุดสะสมตรา → สแกน QR ที่บูธรับตราน้องจีออส → ครบแล้วได้**ตั๋วลุ้นรางวัล** (QR) → ยื่นให้เจ้าหน้าที่สแกนที่**เคาน์เตอร์แลกรางวัล** → เขียนชื่อลงใบจับฉลาก หย่อนกล่อง (จับฉลากเครื่องใช้ไฟฟ้า ประกาศผลภายในงาน) · สูจิบัตร: กำหนดการ ผังงาน บูธ แนะนำน้องจีออส |
-| **เจ้าหน้าที่** `staff/` | ใส่ PIN → เลือกบูธ → จอแสดง QR + รหัส 6 หลักที่**เปลี่ยนทุก 30 วินาที** · สแกนสมุดผู้เข้าร่วม (กรณีมือถือเขาสแกนไม่ได้) · เคาน์เตอร์แลกรางวัล: สแกนตั๋ว (หรือพิมพ์รหัส) → ระบบตรวจสิทธิ์ → กด "ยืนยันรับตั๋ว" → ยื่นใบจับฉลากให้เขียนชื่อ · รายชื่อผู้ยื่นตั๋วล่าสุด · แอดมิน: ภาพรวม รายชื่อผู้ยื่นตั๋ว (ค้นชื่อ ใช้ตรวจชื่อที่จับได้) ยกเลิกการยื่นตั๋วที่สแกนผิด ดาวน์โหลด CSV ล้างข้อมูลทดสอบ |
+| **เจ้าหน้าที่** `staff/` | ใส่ PIN → เลือกบูธ → จอแสดง QR + รหัส 6 หลักที่**เปลี่ยนทุก 30 วินาที** · สแกนสมุดผู้เข้าร่วม (กรณีมือถือเขาสแกนไม่ได้) · เคาน์เตอร์แลกรางวัล: สแกนตั๋ว (หรือพิมพ์รหัส) → ระบบตรวจสิทธิ์ → กด "ยืนยันรับตั๋ว" → ยื่นใบจับฉลากให้เขียนชื่อ · รายชื่อผู้ยื่นตั๋วล่าสุด |
+| **แอดมิน** `admin/` | ใส่ ADMIN_PIN → **แก้ชื่อบูธ / ชื่อบนตรา / ตำแหน่ง / ไอคอน / รายละเอียด และอัปโหลดโลโก้บูธ** (เว็บผู้เข้าร่วมและเจ้าหน้าที่เปลี่ยนตามภายใน ~1 นาที) · แดชบอร์ด: ตัวเลขหลัก ตราตามช่วงเวลา 15 นาที ตราแต่ละบูธ เส้นทางผู้เข้าร่วม จำนวนตราต่อคน ประเภทผู้เข้าร่วม โรงเรียนที่ร่วมมากสุด (รีเฟรชทุก 30 วินาที) · รายชื่อผู้ยื่นตั๋ว (ค้นชื่อ ตรวจชื่อที่จับได้ ยกเลิกที่สแกนผิด) · ดาวน์โหลด CSV · ล้างข้อมูลทดสอบ |
 
 ## กันโกง
 - QR ที่บูธเปลี่ยนทุก 30 วินาที (คล้าย OTP) ถ่ายรูปส่งต่อเพื่อนก็ใช้ไม่ได้ (รับย้อนหลังได้ไม่เกิน ~10 นาที เผื่อเน็ตหลุดตอนสแกน)
@@ -23,7 +24,9 @@
 
 ## เว็บจริง
 - ผู้เข้าร่วม: **https://tggc2569-activity.ktxcdd.workers.dev**
-- เจ้าหน้าที่: **https://tggc2569-activity-staff.ktxcdd.workers.dev** (PIN เจ้าหน้าที่/แอดมินตั้งเป็น Worker secret ไม่อยู่ใน repo)
+- เจ้าหน้าที่: **https://tggc2569-activity-staff.ktxcdd.workers.dev**
+- แอดมิน: **https://tggc2569-activity-admin.ktxcdd.workers.dev**
+- PIN ทุกตัวตั้งเป็น Worker secret ไม่อยู่ใน repo (เว็บแอดมินมี ADMIN_PIN ของตัวเอง แยกจากเว็บเจ้าหน้าที่)
 - บัญชี Cloudflare `ktxcdd` (บัญชีเดียวกับเว็บลงทะเบียน แต่เป็นเว็บแยก) · D1 `tggc2569-activity` (APAC)
 - ตอนนี้ deploy แบบฝังไฟล์ใน Worker (`wrangler.embed.jsonc`) · ถ้า deploy จากเครื่องตัวเองได้ ใช้ `npm run deploy` (แบบไฟล์แยกเสิร์ฟจาก CDN ไม่นับโควตา) ได้เลย URL เดิม
 
@@ -44,6 +47,7 @@ npx wrangler d1 create tggc2569-activity
 npm run deploy
 npx wrangler secret put STAFF_PIN -c staff/wrangler.jsonc
 npx wrangler secret put ADMIN_PIN -c staff/wrangler.jsonc
+npx wrangler secret put ADMIN_PIN -c admin/wrangler.jsonc
 ```
 - ตารางในฐานข้อมูลสร้างเองอัตโนมัติเมื่อมีการใช้งานครั้งแรก
 - ได้ URL เช่น `https://tggc2569-activity.<ชื่อบัญชี>.workers.dev` และ `https://tggc2569-activity-staff.<ชื่อบัญชี>.workers.dev`
@@ -56,6 +60,7 @@ npx wrangler secret put ADMIN_PIN -c staff/wrangler.jsonc
 npm run build && node scripts/build-embedded.mjs
 npx wrangler deploy -c participant/wrangler.embed.jsonc
 npx wrangler deploy -c staff/wrangler.embed.jsonc
+npx wrangler deploy -c admin/wrangler.embed.jsonc
 ```
 
 ## รองรับคนได้แค่ไหน
@@ -77,6 +82,7 @@ npx wrangler deploy -c staff/wrangler.embed.jsonc
 ## พัฒนาในเครื่อง
 ```bash
 printf 'STAFF_PIN=111111\nADMIN_PIN=999999\n' > staff/.dev.vars
+printf 'ADMIN_PIN=999999\n' > admin/.dev.vars
 npm run build
 npx wrangler dev -c participant/wrangler.jsonc --persist-to .wrangler/state --port 8787
 npx wrangler dev -c staff/wrangler.jsonc --persist-to .wrangler/state --port 8788 --inspector-port 9230

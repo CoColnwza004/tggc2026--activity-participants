@@ -3,8 +3,9 @@
 import { EVENT, BOOTH_IDS, REQUIRED } from "../shared/event.js";
 import {
   json, fail, body, clientIp, master, boothSecret, staffToken, staffFromReq,
-  isLimited, bump, passportState, addStamp, clean, redeemTicket, unredeemTicket, readCounts, noteProgress, stampCount,
+  isLimited, bump, passportState, addStamp, clean, redeemTicket, noteProgress, stampCount, boothConfig, logoResponse,
 } from "../shared/server.js";
+import { adminApi } from "../shared/admin.js";
 
 const STATIONS = [...BOOTH_IDS, EVENT.prizePoint.id];
 
@@ -45,58 +46,16 @@ async function stationStats(env, id) {
   return { count: c.results[0]?.n || 0, recent: last.results };
 }
 
-async function summary(env) {
-  await master(env);
-  const c = await readCounts(env); // ~30 small rows: kept up to date as stamps, passports and tickets come in
-  const pick = (prefix) => Object.fromEntries(Object.entries(c).filter(([k]) => k.startsWith(prefix)).map(([k, n]) => [k.slice(prefix.length), n]));
-  return {
-    passports: c.p || 0,
-    booths: pick("b:"),
-    completed: c.done || 0,
-    redeemed: c.rd || 0,
-    roles: pick("r:"),
-  };
-}
-
-const csvCell = (v) => {
-  let s = v == null ? "" : String(v);
-  if (/^[=+\-@]/.test(s)) s = "'" + s; // keep spreadsheet formulas from running
-  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-};
-const thTime = (ms) => (ms ? new Date(ms + 7 * 3600e3).toISOString().replace("T", " ").slice(0, 19) : "");
-
-async function exportCsv(env) {
-  const { results } = await env.DB.prepare(
-    `SELECT p.id, p.name, p.school, p.role, p.phone, p.created,
-            (SELECT GROUP_CONCAT(booth || '@' || at) FROM stamps s WHERE s.pid = p.id) AS st,
-            r.at AS redeemed, r.staff
-       FROM passports p LEFT JOIN redeems r ON r.pid = p.id
-      ORDER BY p.created`
-  ).all();
-  const head = ["รหัสสมุด", "ชื่อ", "โรงเรียน/หน่วยงาน", "ประเภท", "เบอร์โทร", "เวลาสมัคร", ...EVENT.booths.map((b) => `บูธ ${b.no} ${b.th}`), "จำนวนตรา", "เวลายื่นตั๋ว", "เจ้าหน้าที่ผู้สแกนตั๋ว"];
-  const rows = [head];
-  for (const r of results) {
-    const st = Object.fromEntries((r.st || "").split(",").filter(Boolean).map((x) => x.split("@")));
-    rows.push([
-      r.id, r.name, r.school, { student: "นักเรียน", teacher: "ครู", guest: "บุคคลทั่วไป" }[r.role] || r.role, r.phone, thTime(r.created),
-      ...EVENT.booths.map((b) => thTime(+st[b.id] || 0)), BOOTH_IDS.filter((b) => st[b]).length,
-      thTime(r.redeemed), r.staff || "",
-    ]);
-  }
-  const csv = "﻿" + rows.map((r) => r.map(csvCell).join(",")).join("\r\n");
-  return new Response(csv, {
-    headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="tggc2569-activity-${Date.now()}.csv"`, "cache-control": "no-store" },
-  });
-}
-
 async function api(env, req, url) {
   const route = req.method + " " + url.pathname;
   if (route === "POST /api/login") return login(env, req);
   if (route === "GET /api/ping") return json({ ok: true, now: Date.now() });
+  if (route === "GET /api/booths") return json({ ok: true, ...(await boothConfig(env)), now: Date.now() });
+  let lm;
+  if (req.method === "GET" && (lm = url.pathname.match(/^\/api\/logo\/(b\d+)$/)) && BOOTH_IDS.includes(lm[1])) return logoResponse(env, lm[1]);
 
   const who = await staffFromReq(env, req);
   if (!who) return fail(401, "auth", "กรุณาเข้าสู่ระบบใหม่");
-  const admin = who.role === "admin";
 
   let m;
   if (req.method === "GET" && (m = url.pathname.match(/^\/api\/station\/([a-z0-9_-]+)$/))) {
@@ -130,37 +89,8 @@ async function api(env, req, url) {
     return json({ ok: true, fresh, ...(await passportState(env, b.pid)), now: Date.now() });
   }
 
-  if (!admin) return fail(403, "admin", "เฉพาะแอดมิน");
-  if (route === "GET /api/admin/summary") return json({ ok: true, ...(await summary(env)), now: Date.now() });
-  if (route === "GET /api/admin/export") return exportCsv(env);
-  if (route === "GET /api/admin/redeemed") {
-    // everyone who handed in a ticket: used to check a name drawn from the raffle box
-    const { results } = await env.DB.prepare(
-      `SELECT r.pid, r.at, r.staff, p.name, p.school, p.role FROM redeems r JOIN passports p ON p.id = r.pid ORDER BY r.at`
-    ).all();
-    return json({ ok: true, list: results, now: Date.now() });
-  }
-  if (route === "POST /api/admin/unredeem") {
-    // undo a ticket scanned by mistake (admin only)
-    const b = await body(req);
-    if (!/^G[0-9A-Z]{6}$/.test(b.pid || "")) return fail(400, "bad", "ข้อมูลไม่ถูกต้อง");
-    await unredeemTicket(env, b.pid);
-    return json({ ok: true, ...(await passportState(env, b.pid)), now: Date.now() });
-  }
-  if (route === "POST /api/admin/reset") {
-    // wipes test data before the real event: passports, stamps, tickets
-    const b = await body(req);
-    if (b.confirm !== "RESET") return fail(400, "confirm", "พิมพ์ RESET เพื่อยืนยัน");
-    await env.DB.batch([
-      env.DB.prepare("DELETE FROM stamps"),
-      env.DB.prepare("DELETE FROM redeems"),
-      env.DB.prepare("DELETE FROM completed"),
-      env.DB.prepare("DELETE FROM counts"),
-      env.DB.prepare("DELETE FROM passports"),
-      env.DB.prepare("DELETE FROM attempts"),
-    ]);
-    return json({ ok: true, ...(await summary(env)), now: Date.now() });
-  }
+  const ar = await adminApi(env, req, url, who); // admin role: still used by the lookup screen (undo a ticket)
+  if (ar) return ar;
   return fail(404, "nf", "not found");
 }
 

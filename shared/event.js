@@ -28,6 +28,8 @@ export const EVENT = {
 
   // URL ของเว็บผู้เข้าร่วม — QR ที่บูธจะชี้มาที่นี่ (สแกนด้วยกล้องมือถือปกติก็เปิดเว็บและรับตราได้ทันที)
   participantUrl: "https://tggc2569-activity.ktxcdd.workers.dev/",
+  // เว็บแอดมิน (แก้ชื่อ/โลโก้บูธ, แดชบอร์ด, รายชื่อผู้ยื่นตั๋ว) — เข้าด้วย ADMIN_PIN
+  adminUrl: "https://tggc2569-activity-admin.ktxcdd.workers.dev/",
 
   booths: [
     booth(1, "มหาวิทยาลัยศิลปากร", "SILPAKORN UNIVERSITY", "uni", HALL_SIDE),

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>แอดมิน · TGGC 2569 สะสมตรา</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#075f98">
+<link rel="icon" type="image/png" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&family=Chakra+Petch:wght@600;700&family=Kanit:wght@500;700;800&display=swap">
+<!--CSS-->
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<section class="login" id="login" hidden>
+  <form class="login-card" id="loginForm" autocomplete="off">
+    <img class="login-logo" src="assets/logo-full.webp" alt="TGGC 2026" width="480" height="328">
+    <span class="badge">ADMIN · แอดมิน</span>
+    <h1>จัดการระบบสะสมตรา</h1>
+    <p>แก้ชื่อ/โลโก้บูธ · แดชบอร์ดสถิติ · รายชื่อผู้ยื่นตั๋ว</p>
+    <label class="field"><span>ชื่อผู้ดูแล</span><input class="input" id="lgName" maxlength="40" placeholder="เช่น ครูสมชาย" autocomplete="nickname" required></label>
+    <label class="field"><span>PIN แอดมิน</span><input class="input pin" id="lgPin" type="password" inputmode="numeric" maxlength="20" placeholder="••••••" required></label>
+    <p class="err" id="lgErr" hidden></p>
+    <button class="btn" type="submit" id="lgBtn">เข้าสู่ระบบ</button>
+  </form>
+</section>
+
+<!-- ============ APP ============ -->
+<div class="app" id="app" hidden>
+  <header class="top">
+    <img class="top-logo" src="assets/logo-mark.webp" alt="" width="40" height="40">
+    <div class="top-t"><b>แอดมิน · สะสมตรา TGGC 2569</b><small id="who"></small></div>
+    <span class="spacer"></span>
+    <span class="upd" id="upd"></span>
+    <button class="icon-btn" id="refreshBtn" type="button" aria-label="รีเฟรช" title="รีเฟรช">${refresh}</button>
+    <button class="icon-btn" id="logoutBtn" type="button" aria-label="ออกจากระบบ" title="ออกจากระบบ">${logout}</button>
+  </header>
+  <nav class="tabs" aria-label="เมนู">
+    <a href="#/dash" data-tab="dash">ภาพรวม</a>
+    <a href="#/booths" data-tab="booths">บูธกิจกรรม</a>
+    <a href="#/tickets" data-tab="tickets">ผู้ยื่นตั๋ว</a>
+    <a href="#/data" data-tab="data">ข้อมูลระบบ</a>
+  </nav>
+
+  <!-- dashboard -->
+  <main class="wrap" data-view="dash" hidden>
+    <div class="kpis" id="kpis"></div>
+
+    <section class="card">
+      <header class="card-h"><div><h2>ตราที่ให้ตามช่วงเวลา</h2><p>จำนวนตราที่ประทับในแต่ละช่วง 15 นาที (เวลาไทย)</p></div></header>
+      <div class="chart" id="chTime"></div>
+      <details class="tv"><summary>ดูเป็นตาราง</summary><div id="tbTime"></div></details>
+    </section>
+
+    <div class="grid2">
+      <section class="card">
+        <header class="card-h"><div><h2>ตราแต่ละบูธ</h2><p>จำนวนผู้ได้รับตรา เรียงจากมากไปน้อย</p></div></header>
+        <div class="chart" id="chBooths"></div>
+        <details class="tv"><summary>ดูเป็นตาราง</summary><div id="tbBooths"></div></details>
+      </section>
+      <div class="stack">
+        <section class="card">
+          <header class="card-h"><div><h2>เส้นทางผู้เข้าร่วม</h2><p>จากเปิดสมุด จนถึงยื่นตั๋วลุ้นรางวัล</p></div></header>
+          <div class="chart" id="chFunnel"></div>
+          <details class="tv"><summary>ดูเป็นตาราง</summary><div id="tbFunnel"></div></details>
+        </section>
+        <section class="card">
+          <header class="card-h"><div><h2>จำนวนตราต่อคน</h2><p>มีกี่คนที่สะสมได้ 0, 1, 2 … ตรา</p></div></header>
+          <div class="chart" id="chDist"></div>
+          <details class="tv"><summary>ดูเป็นตาราง</summary><div id="tbDist"></div></details>
+        </section>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <section class="card">
+        <header class="card-h"><div><h2>ประเภทผู้เข้าร่วม</h2><p>จากข้อมูลตอนเปิดสมุด</p></div></header>
+        <div id="chRoles"></div>
+        <details class="tv"><summary>ดูเป็นตาราง</summary><div id="tbRoles"></div></details>
+      </section>
+      <section class="card">
+        <header class="card-h"><div><h2>โรงเรียน / หน่วยงานที่ร่วมมากที่สุด</h2><p>15 อันดับแรก</p></div></header>
+        <div id="tbSchools"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- booths -->
+  <main class="wrap" data-view="booths" hidden>
+    <div class="bar-row">
+      <div><h2 class="h">แก้ไขข้อมูลบูธ</h2><p class="sub">แก้แล้วกด "บันทึก" · เว็บผู้เข้าร่วมและเว็บเจ้าหน้าที่จะแสดงชื่อ/โลโก้ใหม่ภายในประมาณ 1 นาที (ป้าย/โปสเตอร์ที่พิมพ์แล้วไม่เปลี่ยน)</p></div>
+      <input class="input search" id="bq" type="search" placeholder="ค้นหาบูธ">
+    </div>
+    <div class="booths" id="booths"></div>
+  </main>
+
+  <!-- tickets -->
+  <main class="wrap" data-view="tickets" hidden>
+    <div class="bar-row">
+      <div><h2 class="h">รายชื่อผู้ยื่นตั๋ว</h2><p class="sub">ใช้ตรวจชื่อที่จับได้จากกล่องว่ายื่นตั๋วจริง · กดยกเลิกได้เมื่อเจ้าหน้าที่สแกนผิดคน</p></div>
+      <input class="input search" id="tq" type="search" placeholder="ค้นชื่อ / โรงเรียน / รหัส">
+    </div>
+    <p class="sub" id="tInfo"></p>
+    <div class="tlist" id="tlist"></div>
+  </main>
+
+  <!-- data -->
+  <main class="wrap" data-view="data" hidden>
+    <section class="card">
+      <h2>ดาวน์โหลดข้อมูล</h2>
+      <p class="sub">ไฟล์ CSV เปิดด้วย Excel หรือ Google Sheets ได้ · มีรายชื่อ ตราแต่ละบูธ และเวลายื่นตั๋ว</p>
+      <button class="btn" type="button" id="exportBtn">${download}<span>ดาวน์โหลด CSV</span></button>
+    </section>
+    <section class="card">
+      <h2>ลิงก์ที่เกี่ยวข้อง</h2>
+      <ul class="links" id="links"></ul>
+    </section>
+    <section class="card danger">
+      <h2>ล้างข้อมูลทดสอบ (ก่อนเริ่มงานจริง)</h2>
+      <p class="sub">ลบสมุด ตรา และประวัติการยื่นตั๋วทั้งหมด — ย้อนกลับไม่ได้ ดาวน์โหลด CSV เก็บไว้ก่อน · ข้อมูลบูธและโลโก้จะไม่ถูกลบ</p>
+      <div class="row"><input class="input" id="resetTxt" placeholder="พิมพ์ RESET"><button class="btn red" type="button" id="resetBtn">ล้างข้อมูล</button></div>
+    </section>
+  </main>
+</div>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!--JS-->
+</body>
+</html>

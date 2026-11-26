@@ -58,7 +58,7 @@ a { color: var(--mist); }
 .stations { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
 .station-card { position: relative; overflow: hidden; display: grid; gap: 2px; padding: 16px; min-height: 120px; border-radius: 20px; text-decoration: none; color: #fff; background: linear-gradient(140deg, var(--c), color-mix(in srgb, var(--c) 40%, #021b2e)); box-shadow: 0 14px 30px rgba(0, 0, 0, .3); }
 .station-card::after { content: ""; position: absolute; inset: 0; background: repeating-radial-gradient(circle at 110% 120%, rgba(255, 255, 255, .12) 0 1px, transparent 1px 14px); pointer-events: none; }
-.station-card .no { font-family: var(--f-tech); font-weight: 700; font-size: 12.5px; letter-spacing: .18em; opacity: .85; }
+.station-card .no { font-family: var(--f-tech); font-weight: 700; font-size: 12.5px; letter-spacing: .18em; opacity: .85; padding-right: 50px; }
 .station-card b { font-family: var(--f-display); font-size: 17px; line-height: 1.3; padding-right: 36px; }
 .station-card small { opacity: .85; font-size: 13px; }
 .station-card .ico { position: absolute; right: 14px; top: 14px; width: 34px; height: 34px; opacity: .8; }
@@ -220,3 +220,7 @@ a { color: var(--mist); }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast.err { background: #ffb4bb; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+
+/* booth logos (uploaded on the admin site) */
+.station-card .slogo { position: absolute; right: 12px; top: 12px; z-index: 1; width: 44px; height: 44px; object-fit: contain; border-radius: 10px; background: #fff; padding: 3px; }
+.st-logo { width: 44px; height: 44px; flex: none; object-fit: contain; border-radius: 12px; background: #fff; padding: 3px; }

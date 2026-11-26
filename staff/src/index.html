@@ -40,7 +40,7 @@
     <button class="icon-btn" id="logoutBtn" type="button" aria-label="ออกจากระบบ">${logout}</button>
   </header>
   <div class="wrap">
-    <a class="admin-card" href="#/admin" id="adminCard" hidden><span>${sparkle}</span><div><b>แดชบอร์ดแอดมิน</b><small>ภาพรวม · รายชื่อผู้ยื่นตั๋ว (ตรวจชื่อจับฉลาก) · ส่งออก CSV</small></div>${arrow}</a>
+    <a class="admin-card" href="#" target="_blank" rel="noopener" id="adminCard" hidden><span>${sparkle}</span><div><b>เว็บแอดมิน</b><small>แก้ชื่อ/โลโก้บูธ · แดชบอร์ดสถิติ · รายชื่อผู้ยื่นตั๋ว · CSV (เปิดแท็บใหม่ ใช้ PIN แอดมิน)</small></div>${arrow}</a>
     <h2 class="sub">บูธกิจกรรม</h2>
     <div class="stations" id="stations"></div>
     <h2 class="sub">เคาน์เตอร์แลกรางวัล</h2>
@@ -55,7 +55,7 @@
   <div class="st-bg" aria-hidden="true"><i></i><i></i></div>
   <header class="st-bar">
     <a class="icon-btn glass" href="#/" aria-label="เปลี่ยนจุด">${back}</a>
-    <div class="st-name"><small id="stNo"></small><b id="stName"></b></div>
+    <img class="st-logo" id="stLogo" alt="" hidden><div class="st-name"><small id="stNo"></small><b id="stName"></b></div>
     <span class="spacer"></span>
     <span class="net" id="netPill"><i></i><span>ออนไลน์</span></span>
     <button class="icon-btn glass" id="fsBtn" type="button" aria-label="เต็มจอ">${expand}</button>
@@ -91,32 +91,6 @@
     <form class="search" id="lookupForm"><input class="input" id="lookupId" maxlength="8" placeholder="รหัสสมุด เช่น G7K2M9Q" autocapitalize="characters" autocomplete="off"><button class="btn" type="submit">${search}</button></form>
     <button class="btn ghost wide" type="button" id="lookupScan">${camera}<span>สแกน QR ของผู้เข้าร่วม</span></button>
     <div id="lookupOut"></div>
-  </div>
-</section>
-
-<!-- ============ ADMIN ============ -->
-<section class="screen admin" data-screen="admin" hidden>
-  <header class="bar">
-    <a class="icon-btn" href="#/" aria-label="กลับ">${back}</a>
-    <div><b>แดชบอร์ดแอดมิน</b><small id="admUpdated">กำลังโหลด…</small></div>
-    <span class="spacer"></span>
-    <button class="icon-btn" id="admRefresh" type="button" aria-label="รีเฟรช">${refresh}</button>
-  </header>
-  <div class="wrap wide-wrap">
-    <div class="kpis" id="kpis"></div>
-    <div class="panel"><h3>ตราที่ให้แต่ละบูธ</h3><div class="bars" id="boothBars"></div></div>
-    <div class="panel"><h3>รายชื่อผู้ยื่นตั๋ว <small>ใช้ตรวจชื่อที่จับได้จากกล่อง ว่ายื่นตั๋วจริง</small></h3>
-      <form class="search" id="rdForm"><input class="input" id="rdQ" placeholder="ค้นชื่อ / โรงเรียน / รหัส" autocomplete="off"><button class="btn" type="submit">${search}</button></form>
-      <p class="help" id="rdInfo"></p>
-      <div class="rd-list" id="rdList"></div>
-    </div>
-    <div class="panel"><h3>ข้อมูล <small>ไฟล์ CSV เปิดด้วย Excel หรือ Google Sheets ได้</small></h3>
-      <div class="row"><button class="btn green" type="button" id="exportBtn">${download}<span>ดาวน์โหลด CSV</span></button></div>
-      <details class="danger"><summary>ล้างข้อมูลทดสอบ (ก่อนเริ่มงานจริง)</summary>
-        <p>ลบสมุด ตรา และประวัติการยื่นตั๋วทั้งหมด — ย้อนกลับไม่ได้ ดาวน์โหลด CSV เก็บไว้ก่อน</p>
-        <div class="row"><input class="input" id="resetTxt" placeholder="พิมพ์ RESET"><button class="btn red" type="button" id="resetBtn">ล้างข้อมูล</button></div>
-      </details>
-    </div>
   </div>
 </section>
 
