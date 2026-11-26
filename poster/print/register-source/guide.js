@@ -123,7 +123,7 @@ h2::after { content: ""; flex: 1; height: 1px; background: rgba(7,95,152,.18); }
 .foot { position: absolute; left: 40px; right: 40px; bottom: 20px; display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(7,95,152,.16); font-size: 12px; color: var(--muted); font-weight: 600; }
 .foot b { font-family: var(--fd); color: var(--navy); font-size: 14px; }
 </style></head><body><div class="p">
-  <div class="layer bg"></div><canvas class="layer" id="topo" width="3176" height="4492"></canvas><div class="layer grid"></div>
+  <div class="layer bg"></div><canvas class="layer" id="topo" width="4764" height="6738"></canvas><div class="layer grid"></div>
   <header class="head">
     <div>
       <img class="logo" src="data:image/png;base64,${b64(PUB + '/assets/logo-full.png')}" alt="">
@@ -163,7 +163,7 @@ h2::after { content: ""; flex: 1; height: 1px; background: rgba(7,95,152,.18); }
 <script>
 (function () {
 ${TOPO}
-  var cv = document.getElementById('topo'), cx = cv.getContext('2d'); cx.scale(4, 4);
+  var cv = document.getElementById('topo'), cx = cv.getContext('2d'); cx.scale(6, 6);
   drawTopo(cx, 794, 1123, { seed: 77, levels: 16, scale: 0.0019, cell: 12, minorAlpha: .55, lineWidth: 1.4, color: function (p) { return p < .5 ? "rgba(10,152,199,0.15)" : "rgba(20,142,100,0.16)"; } });
   var q = qrcode(0, 'M'); q.addData(${JSON.stringify(URL_REG)}); q.make();
   var n = q.getModuleCount(), c = document.getElementById('qr'), S = c.width, g = c.getContext('2d'), m = S / n;
@@ -178,7 +178,7 @@ ${TOPO}
   const br = await chromium.launch();
   const S = await screens(br);
   const f = path.join(__dirname, 'guide.html'); fs.writeFileSync(f, html(S));
-  const pg = await br.newPage({ viewport: { width: 794, height: 1123 }, deviceScaleFactor: 3.125 });
+  const pg = await br.newPage({ viewport: { width: 794, height: 1123 }, deviceScaleFactor: +(process.env.DSF || 3.125) });
   const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto('file://' + f); await pg.waitForFunction(() => window.__qr); await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(500);
   // title on one line: shrink until it fits next to the QR card
@@ -188,7 +188,7 @@ ${TOPO}
     return [...document.querySelectorAll('.tips, .steps, .who')].filter(e => e.getBoundingClientRect().bottom > f - 4).map(e => e.className + ':' + Math.round(e.getBoundingClientRect().bottom) + '>' + Math.round(f)); });
   const png = path.join(OUT, 'วิธีลงทะเบียน.png');
   await pg.screenshot({ path: png });
-  await pg.pdf({ path: path.join(OUT, 'วิธีลงทะเบียน-print.pdf'), width: (794 * 2 / 96) + 'in', height: (1123 * 2 / 96) + 'in', printBackground: true, scale: 2 });
+  if (!process.env.DSF) await pg.pdf({ path: path.join(OUT, 'วิธีลงทะเบียน-print.pdf'), width: (794 * 2 / 96) + 'in', height: (1123 * 2 / 96) + 'in', printBackground: true, scale: 2 });
   console.log('qr', await pg.evaluate(() => window.__qr), 'overlap', JSON.stringify(over), 'errors', JSON.stringify(errs), 'h1', await pg.evaluate(() => getComputedStyle(document.querySelector('h1')).fontSize));
   fs.unlinkSync(f); await br.close(); srv.close();
 })();

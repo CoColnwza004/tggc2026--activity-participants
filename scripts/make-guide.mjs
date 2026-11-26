@@ -147,16 +147,16 @@ const tmp = root + "poster/_guide.html";
 const b = await chromium.launch();
 for (const [name, make] of [["guide-participant", participant], ["guide-staff", staff]]) {
   writeFileSync(tmp, doc(await make()));
-  const ctx = await b.newContext({ viewport: { width: 1240, height: 1754 }, deviceScaleFactor: 2 });
+  const ctx = await b.newContext({ viewport: { width: 1240, height: 1754 }, deviceScaleFactor: process.env.PRINT ? 4.5 : 2 });
   const p = await ctx.newPage();
   await p.goto(pathToFileURL(tmp).href, { waitUntil: "networkidle" });
   await p.evaluate(() => document.fonts.ready);
   const over = await p.evaluate(() => [...document.querySelectorAll(".pg *")].filter((e) => e.getBoundingClientRect().bottom > 1754 - 50 && !e.closest(".ft")).map((e) => e.className).slice(0, 4));
   if (process.env.PRINT) {
-    // large-format PDF (standee): page at 2× the layout size so shadows/effects are rasterised at print resolution
+    // large-format print (standee): very high-res PNG, flattened into a PDF by scripts/flat-pdf.py
     mkdirSync(root + "poster/print", { recursive: true });
-    await p.pdf({ path: root + `poster/print/${name}-print.pdf`, width: `${2480 / 96}in`, height: `${3508 / 96}in`, printBackground: true, pageRanges: "1", scale: 2 });
-    console.log(`poster/print/${name}-print.pdf`);
+    await p.screenshot({ path: root + `poster/print/_${name}.png` });
+    console.log(`poster/print/_${name}.png`);
     await ctx.close(); continue;
   }
   await p.screenshot({ path: root + `poster/${name}.png` });

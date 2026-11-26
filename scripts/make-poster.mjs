@@ -19,7 +19,8 @@ catch { pw = await import(process.env.PLAYWRIGHT_PATH || "playwright"); }
 const chromium = pw.chromium || pw.default.chromium;
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-// PRINT=1: large-format PDFs (standee / roll-up) in poster/print/ — page at 2× the layout size, globe at 5× pixels
+// PRINT=1: large-format print files (standee) in poster/print/: a very high-res PNG, flattened into a PDF by
+// scripts/flat-pdf.py (vector PDFs keep CSS effects as transparency groups that some viewers/RIPs draw wrong)
 const PRINT = !!process.env.PRINT;
 const out = root + "poster/";
 mkdirSync(out, { recursive: true });
@@ -294,15 +295,15 @@ const shots = [["a4", 1240, 1754, 2], ["soc", 1080, 1350, 2], ["sto", 1080, 1920
 for (const [k, w, h, dsf] of shots) {
   if (process.argv[2] && process.argv[2] !== k) continue;
   writeFileSync(tmp, doc(pages[k], w, h));
-  const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: dsf, reducedMotion: "reduce" });
+  const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: PRINT ? 5 : dsf, reducedMotion: "reduce" });
   const p = await ctx.newPage();
   await p.goto(pathToFileURL(tmp).href, { waitUntil: "networkidle" });
   await p.waitForFunction(() => window.__ready === true, null, { timeout: 20000 });
   const name = { a4: "poster-a4", soc: "poster-social", sto: "poster-story" }[k];
   if (PRINT) {
     mkdirSync(out + "print", { recursive: true });
-    await p.pdf({ path: out + `print/${name}-print.pdf`, width: `${(w * 2) / 96}in`, height: `${(h * 2) / 96}in`, printBackground: true, pageRanges: "1", scale: 2 });
-    console.log(`poster/print/${name}-print.pdf ${((w * 2 / 96) * 25.4).toFixed(0)}×${((h * 2 / 96) * 25.4).toFixed(0)} mm`);
+    await p.screenshot({ path: out + `print/_${name}.png` });
+    console.log(`poster/print/_${name}.png (${w * 5}×${h * 5})`);
     await ctx.close(); continue;
   }
   await p.screenshot({ path: out + name + ".png" });

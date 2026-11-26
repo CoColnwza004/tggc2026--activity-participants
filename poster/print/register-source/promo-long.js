@@ -127,7 +127,7 @@ h1 .b em { font-style: normal; background: linear-gradient(100deg, var(--teal), 
 .see { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; align-items: center; gap: 8px; color: #fff; font-family: var(--fd); font-weight: 700; font-size: 20px; text-shadow: 0 2px 6px rgba(4,50,79,.45); }
 .see svg { width: 22px; height: 22px; }
 </style></head><body><div class="p">
-  <div class="layer bg"></div><canvas class="layer" id="topo" width="3176" height="4492"></canvas><div class="layer grid"></div><span class="sun"></span>
+  <div class="layer bg"></div><canvas class="layer" id="topo" width="4764" height="6738"></canvas><div class="layer grid"></div><span class="sun"></span>
   <span class="coord l">LAT 13.9°N · LONG 100.5°E · NONTHABURI · THAILAND</span>
   <span class="coord r">TGGC 2026 · GEOGRAPHY GENIUS CHALLENGE · WGS 84</span>
 
@@ -192,7 +192,7 @@ h1 .b em { font-style: normal; background: linear-gradient(100deg, var(--teal), 
 <script>
 (function () {
 ${TOPO}
-  var cv = document.getElementById('topo'), cx = cv.getContext('2d'); cx.scale(4, 4);
+  var cv = document.getElementById('topo'), cx = cv.getContext('2d'); cx.scale(6, 6);
   drawTopo(cx, 794, 1123, { seed: 2026, levels: 18, scale: 0.0019, cell: 12, minorAlpha: .55, lineWidth: 1.5, color: function (p) { return p < .5 ? "rgba(10,152,199,0.18)" : "rgba(20,142,100,0.2)"; } });
   var q = qrcode(0, 'H'); q.addData(${JSON.stringify(URL_REG)}); q.make();
   var n = q.getModuleCount(), c = document.getElementById('qr'), S = c.width, g = c.getContext('2d'), m = S / n;
@@ -213,7 +213,7 @@ ${TOPO}
 (async () => {
   const br = await chromium.launch();
   const f = path.join(__dirname, 'promo.html'); fs.writeFileSync(f, HTML);
-  const pg = await br.newPage({ viewport: { width: 794, height: 1123 }, deviceScaleFactor: 3.125 });
+  const pg = await br.newPage({ viewport: { width: 794, height: 1123 }, deviceScaleFactor: +(process.env.DSF || 3.125) });
   const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto('file://' + f); await pg.waitForFunction(() => window.__qr); await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(500);
   const fit = await pg.evaluate(() => { const land = document.querySelector('.foot').getBoundingClientRect().top + 60;
@@ -223,10 +223,10 @@ ${TOPO}
   const shot = 'data:image/png;base64,' + fs.readFileSync(png).toString('base64');
   const fromShot = await pg.evaluate(async (src) => { const im = new Image(); im.src = src; await im.decode();
     const b = document.querySelector('.cta .qr').getBoundingClientRect(), k = im.width / 794, pad = 30;
-    const c = document.createElement('canvas'); c.width = (b.width + pad * 2) * k / 3; c.height = (b.height + pad * 2) * k / 3; const x = c.getContext('2d');
+    const c = document.createElement('canvas'); c.width = (b.width + pad * 2) * k / 6; c.height = (b.height + pad * 2) * k / 6; const x = c.getContext('2d');
     x.drawImage(im, (b.left - pad) * k, (b.top - pad) * k, (b.width + pad * 2) * k, (b.height + pad * 2) * k, 0, 0, c.width, c.height);
     const r = jsQR(x.getImageData(0, 0, c.width, c.height).data, c.width, c.height); return r ? r.data : 'FAIL'; }, shot);
-  await pg.pdf({ path: path.join(OUT, 'ประชาสัมพันธ์การลงทะเบียน-print.pdf'), width: (794 * 2 / 96) + 'in', height: (1123 * 2 / 96) + 'in', printBackground: true, scale: 2 });
+  if (!process.env.DSF) await pg.pdf({ path: path.join(OUT, 'ประชาสัมพันธ์การลงทะเบียน-print.pdf'), width: (794 * 2 / 96) + 'in', height: (1123 * 2 / 96) + 'in', printBackground: true, scale: 2 });
   console.log('qr', await pg.evaluate(() => window.__qr), '| from image', fromShot, '| overlap', JSON.stringify(fit), '| errors', JSON.stringify(errs));
   fs.unlinkSync(f); await br.close();
 })();
