@@ -4,6 +4,7 @@
 // Screens come from poster/shots/ (make them first: node scripts/guide-shots.mjs).
 // Usage: node scripts/make-guide.mjs
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { EVENT, REQUIRED } from "../shared/event.js";
 import { icon } from "../shared/web/icons.js";
@@ -155,12 +156,15 @@ for (const [name, make] of [["guide-participant", participant], ["guide-staff", 
   if (process.env.PRINT) {
     // large-format print (standee): very high-res PNG, flattened into a PDF by scripts/flat-pdf.py
     mkdirSync(root + "poster/print", { recursive: true });
-    await p.screenshot({ path: root + `poster/print/_${name}.png` });
-    console.log(`poster/print/_${name}.png`);
+    const big = root + `poster/print/_${name}.png`;
+    await p.screenshot({ path: big });
+    execFileSync("python3", [root + "scripts/flat-pdf.py", big, root + `poster/print/${name}-print.pdf`, "472.4", "668.2"], { stdio: "inherit" });
+    rmSync(big);
     await ctx.close(); continue;
   }
   await p.screenshot({ path: root + `poster/${name}.png` });
-  await p.pdf({ path: root + `poster/${name}.pdf`, width: "210mm", height: "297mm", printBackground: true, pageRanges: "1", scale: (210 / 25.4 * 96) / 1240 });
+  // flattened (one image) A4 PDF: vector PDFs from Chrome keep effects as transparency that some viewers draw wrong
+  execFileSync("python3", [root + "scripts/flat-pdf.py", root + `poster/${name}.png`, root + `poster/${name}.pdf`, "210", "297"], { stdio: "inherit" });
   console.log(`poster/${name}.png`, over.length ? "OVERFLOW " + over.join(",") : "");
   await ctx.close();
 }

@@ -7,6 +7,7 @@
 // Usage: node scripts/make-poster.mjs
 import { build } from "esbuild";
 import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { EVENT, REQUIRED } from "../shared/event.js";
 import { stampHTML, finalSealHTML } from "../participant/src/stamps.js";
@@ -295,19 +296,22 @@ const shots = [["a4", 1240, 1754, 2], ["soc", 1080, 1350, 2], ["sto", 1080, 1920
 for (const [k, w, h, dsf] of shots) {
   if (process.argv[2] && process.argv[2] !== k) continue;
   writeFileSync(tmp, doc(pages[k], w, h));
-  const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: PRINT ? 5 : dsf, reducedMotion: "reduce" });
+  const ctx = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: PRINT ? (k === "a4" ? 4 : 5) : dsf, reducedMotion: "reduce" });
   const p = await ctx.newPage();
   await p.goto(pathToFileURL(tmp).href, { waitUntil: "networkidle" });
   await p.waitForFunction(() => window.__ready === true, null, { timeout: 20000 });
   const name = { a4: "poster-a4", soc: "poster-social", sto: "poster-story" }[k];
   if (PRINT) {
     mkdirSync(out + "print", { recursive: true });
-    await p.screenshot({ path: out + `print/_${name}.png` });
-    console.log(`poster/print/_${name}.png (${w * 5}×${h * 5})`);
+    const big = out + `print/_${name}.png`, mm = k === "a4" ? [420, 594] : [(w / 96) * 2 * 25.4 * 0.8, (h / 96) * 2 * 25.4 * 0.8];
+    await p.screenshot({ path: big });
+    execFileSync("python3", [root + "scripts/flat-pdf.py", big, out + `print/${name}-print.pdf`, String(mm[0]), String(mm[1])], { stdio: "inherit" });
+    rmSync(big);
     await ctx.close(); continue;
   }
   await p.screenshot({ path: out + name + ".png" });
-  if (k === "a4") await p.pdf({ path: out + name + ".pdf", width: "210mm", height: "297mm", printBackground: true, pageRanges: "1", scale: 210 / 25.4 * 96 / w });
+  // flattened (one image) A4 PDF: vector PDFs from Chrome keep effects as transparency that some viewers draw wrong
+  if (k === "a4") execFileSync("python3", [root + "scripts/flat-pdf.py", out + name + ".png", out + name + ".pdf", "210", "297"], { stdio: "inherit" });
   const over = await p.evaluate((H) => [...document.querySelectorAll(".poster *")].filter((e) => !e.closest(".sky") && e.getBoundingClientRect().bottom > H).map((e) => e.className.baseVal ?? e.className).slice(0, 5), h);
   console.log("poster/" + name + ".png", over.length ? "OVERFLOW: " + over.join(", ") : "");
   await ctx.close();
