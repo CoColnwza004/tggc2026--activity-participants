@@ -96,13 +96,13 @@ const participant = async () => `<div class="pg">${await head("HOW TO · GEO PAS
       ${step(3, "p-stamp", "ได้ตราน้องจีออส!", `ตราประทับเด้งขึ้นทันที<br>กด ${btn("สแกนต่อ")} ไปบูธถัดไปได้เลย`)}
       ${step(4, "p-passport", "ดูตราที่สะสมได้", `เมนู ${btn("สมุดตรา")} บอกว่าได้ตราไหนแล้ว<br>และยังขาดอีกกี่บูธ`)}
       ${step(5, "p-ticket", `ครบ ${REQUIRED} ตรา รับตั๋ว`, `ไปที่เมนู ${btn("ลุ้นรางวัล")}<br>จะได้ตั๋วลุ้นรางวัลสีทองพร้อม QR`)}
-      ${step(6, "p-result", "ยื่นตั๋ว ลุ้นรางวัล!", `ให้เจ้าหน้าที่${EVENT.prizePoint.th}สแกนตั๋ว<br>ผลจะขึ้นบนมือถือของคุณทันที`)}
+      ${step(6, "p-result", "ยื่นตั๋ว แล้วเขียนชื่อ!", `ให้เจ้าหน้าที่สแกนตั๋วที่${EVENT.prizePoint.th}<br>แล้วเขียนชื่อลงใบจับฉลาก หย่อนกล่อง`)}
     </div>
     <div class="tips"><h2>ติดปัญหา? ทำแบบนี้</h2><div class="tg">
       ${tip("keypad", "สแกน QR ที่บูธไม่ได้", `กด ${btn("พิมพ์รหัส 6 หลักแทน")} เลือกเลขบูธ แล้วพิมพ์รหัสบนจอเจ้าหน้าที่ หรือเปิด ${btn("QR ของฉัน")} ในสมุดตราให้เจ้าหน้าที่สแกนให้`)}
       ${tip("cloud", "อินเทอร์เน็ตหลุด", "สแกนต่อได้เลย ระบบจะเก็บตราไว้และส่งเข้าระบบเองเมื่อกลับมาออนไลน์ (ควรต่อเน็ตให้ได้ภายใน 10 นาที)")}
       ${tip("user", "เปลี่ยนมือถือ / เผลอลบข้อมูล", "เปิดสมุดใหม่ด้วยชื่อ-นามสกุลและเบอร์โทรเดิม ระบบจะดึงสมุดและตราเดิมคืนให้")}
-      ${tip("gift", "ลุ้นรางวัลได้ 1 ครั้งต่อคน", `ต้องสะสมครบ ${REQUIRED} ตราก่อน · ตั๋ว 1 ใบลุ้นได้ครั้งเดียว · ของรางวัลมีจำนวนจำกัด`)}
+      ${tip("gift", "ลุ้นเครื่องใช้ไฟฟ้า 1 สิทธิ์ต่อคน", `ตั๋ว 1 ใบใช้ได้ครั้งเดียว · ${EVENT.raffle.announce}`)}
     </div></div>
   </div>
   <div class="ft"><span>${EVENT.title}</span><b>${EVENT.short}</b></div></div>`;
@@ -121,14 +121,14 @@ const staff = async () => `<div class="pg">${await head("STAFF GUIDE · คู�
     </div></div>
 
     <h2 class="sec gold" style="margin-top:26px"><span class="tag">PRIZE</span>${EVENT.prizePoint.th}</h2>
-    <div class="prize-row">${phone("s-prize")}
+    <div class="prize-row">${phone("s-ticket")}
       <div><div class="flow">
         <div class="fl"><span class="ti">${icon("camera")}</span><b>สแกนตั๋ว</b><small>เลือก "${EVENT.prizePoint.th}" แล้วกด ${btn("สแกนตั๋วลุ้นรางวัล")}</small></div>
-        <div class="fl"><span class="ti">${icon("check")}</span><b>ตรวจสิทธิ์</b><small>ระบบบอกว่าครบ ${REQUIRED} ตราหรือยัง</small></div>
-        <div class="fl"><span class="ti">${icon("sparkle")}</span><b>กดลุ้น</b><small>กด ${btn("กดลุ้นรางวัล")} ผลขึ้นทั้งสองจอ</small></div>
-        <div class="fl"><span class="ti">${icon("gift")}</span><b>มอบของ</b><small>ได้รางวัล ส่งของแล้วกด ${btn("มอบรางวัลแล้ว")}</small></div>
+        <div class="fl"><span class="ti">${icon("check")}</span><b>ตรวจสิทธิ์</b><small>ระบบบอกว่าครบ ${REQUIRED} ตรา และยังไม่เคยใช้ตั๋ว</small></div>
+        <div class="fl"><span class="ti">${icon("gift")}</span><b>ยืนยัน</b><small>กด ${btn("ยืนยันรับตั๋ว")} ตั๋วจะใช้ซ้ำไม่ได้</small></div>
+        <div class="fl"><span class="ti">${icon("pen")}</span><b>เขียนชื่อ</b><small>ยื่นใบจับฉลากให้เขียนชื่อ แล้วหย่อนกล่อง</small></div>
       </div>
-      <p style="margin:14px 2px 0;font-size:15.5px;line-height:1.55;color:var(--muted)">สแกนกล้องไม่ติด พิมพ์รหัสบนตั๋ว (เช่น G7K2M9Q) แทนได้ · ตั๋วที่ลุ้นแล้วสแกนซ้ำจะขึ้นผลเดิม พร้อมเวลาและชื่อเจ้าหน้าที่ที่มอบของ ลุ้นซ้ำไม่ได้</p></div>
+      <p style="margin:14px 2px 0;font-size:15.5px;line-height:1.55;color:var(--muted)">สแกนกล้องไม่ติด พิมพ์รหัสบนตั๋ว (เช่น G7K2M9Q) แทนได้ · ถ้าขึ้น <b style="color:#a5202c">"ตั๋วนี้ใช้ไปแล้ว"</b> ห้ามให้ใบจับฉลากซ้ำ · ตอนจับรางวัล ตรวจชื่อผู้โชคดีได้ที่แดชบอร์ดแอดมิน → รายชื่อผู้ยื่นตั๋ว</p></div>
     </div>
 
     <div class="tips"><h2>ข้อควรรู้</h2><div class="tg">

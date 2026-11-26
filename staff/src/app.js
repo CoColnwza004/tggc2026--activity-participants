@@ -1,11 +1,11 @@
 // TGGC 2026 staff site: rotating booth QR (works offline once logged in), scan passports,
-// prize point feed + hand-out, admin dashboard.
+// prize counter (ticket check → raffle slip), admin dashboard.
 import { EVENT, BOOTH_IDS, REQUIRED, boothById } from "../../shared/event.js";
 import { STEP, windowAt, codeFor, makePayload } from "../../shared/otp.js";
 import { icon } from "../../shared/web/icons.js";
 import { qrSvg } from "../../shared/web/qr.js";
 import { startScanner } from "../../shared/web/scanner.js";
-import { sfx, buzz, burst, fireworks } from "../../shared/web/fx.js";
+import { sfx, buzz, burst } from "../../shared/web/fx.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -95,7 +95,7 @@ function home() {
   $("#whoami").textContent = `${A.name} · ${A.role === "admin" ? "แอดมิน" : "เจ้าหน้าที่"}`;
   $("#adminCard").hidden = A.role !== "admin";
   $("#stations").innerHTML = EVENT.booths.map((b) => `<a class="station-card" href="#/s/${b.id}" style="--c:${b.color}">${icon(b.icon)}<span class="no">BOOTH ${String(b.no).padStart(2, "0")} · ${esc(b.en)}</span><b>${esc(b.th)}</b><small>${esc(b.place)}</small></a>`).join("");
-  $("#prizeStation").innerHTML = `<a class="station-card" href="#/s/${PRIZE}" style="--c:#c9971c">${icon("gift")}<span class="no">PRIZE POINT</span><b>${esc(EVENT.prizePoint.name)}</b><small>${esc(EVENT.prizePoint.place)}</small></a>`;
+  $("#prizeStation").innerHTML = `<a class="station-card" href="#/s/${PRIZE}" style="--c:#c9971c">${icon("gift")}<span class="no">PRIZE COUNTER</span><b>${esc(EVENT.prizePoint.name)}</b><small>${esc(EVENT.prizePoint.place)}</small></a>`;
 }
 
 // ---------------------------------------------------------------- station (rotating QR)
@@ -114,13 +114,13 @@ async function station(id) {
   show("station");
   const scr = $("[data-screen=station]");
   scr.style.setProperty("--c", prize ? "#c9971c" : b.color);
-  $("#stNo").textContent = prize ? "PRIZE POINT · จุดลุ้นรางวัล" : `BOOTH ${String(b.no).padStart(2, "0")} · ${b.en}`;
+  $("#stNo").textContent = prize ? "PRIZE COUNTER" : `BOOTH ${String(b.no).padStart(2, "0")} · ${b.en}`;
   $("#stName").textContent = b.th;
   $("#howTxt").textContent = prize
-    ? "ผู้ที่สะสมตราครบทุกบูธ สแกน QR นี้ด้วยเว็บสะสมตรา แล้วแตะลูกโลกเพื่อลุ้นรางวัล"
+    ? "สแกนตั๋วในมือถือผู้เข้าร่วม แล้วให้เขียนชื่อลงใบจับฉลาก"
     : "ผู้เข้าร่วมสแกน QR ด้วยเว็บสะสมตรา หรือกล้องมือถือ · หรือพิมพ์รหัส 6 หลักในเว็บ";
-  $("#countLab").textContent = prize ? "ลุ้นไปแล้ว" : "ให้ตราไปแล้ว";
-  $("#scanPassTxt").textContent = prize ? "สแกนตรวจสอบ / มอบรางวัล" : "สแกนสมุดผู้เข้าร่วม (กรณีสแกนไม่ได้)";
+  $("#countLab").textContent = prize ? "ยื่นตั๋วแล้ว" : "ให้ตราไปแล้ว";
+  $("#scanPassTxt").textContent = prize ? "ตรวจสอบสมุด" : "สแกนสมุดผู้เข้าร่วม (กรณีสแกนไม่ได้)";
   $("#countNum").textContent = "–";
   $("#feed").innerHTML = "";
   lastWin = -1; lastCount = -1;
@@ -170,19 +170,10 @@ async function refreshStation() {
 }
 
 function prizeFeed(rows) {
-  if (!rows.length) return `<p class="feed-h">ยังไม่มีผู้ลุ้นรางวัล</p>`;
-  return `<p class="feed-h">ผลลุ้นล่าสุด</p>` + rows.map((r) => `<div class="it"><b>${esc(r.name)} ${r.prize ? `<span class="tag win">🎁 ${esc(r.prize_name)}</span>` : `<span class="tag lose">ไม่ได้รางวัล</span>`}</b>
-    <small>${esc(r.school || "")} · ${esc(r.pid)} · ${fmt(r.at)}</small>
-    <span class="act">${r.prize ? (r.claimed ? `<span class="tag done">✓ มอบแล้ว</span>` : `<button class="btn green mini" type="button" data-claim="${esc(r.pid)}">มอบแล้ว</button>`) : ""}</span></div>`).join("");
+  if (!rows.length) return `<p class="feed-h">ยังไม่มีผู้ยื่นตั๋ว</p>`;
+  return `<p class="feed-h">ยื่นตั๋วล่าสุด</p>` + rows.map((r) => `<div class="it"><b>${esc(r.name)}</b><time>${fmt(r.at)}</time>
+    <small>${esc(r.school || "")} · ${esc(r.pid)}${r.staff ? " · สแกนโดย " + esc(r.staff) : ""}</small></div>`).join("");
 }
-
-$("#feed").addEventListener("click", async (e) => {
-  const b = e.target.closest("[data-claim]");
-  if (!b) return;
-  b.disabled = true;
-  try { await api("/api/claim", { pid: b.dataset.claim }); toast("บันทึกการมอบรางวัลแล้ว"); refreshStation(); }
-  catch (ex) { toast(ex.message, true); b.disabled = false; }
-});
 
 $("#fsBtn").onclick = () => {
   const el = document.documentElement;
@@ -237,7 +228,7 @@ async function staffStamp(pid) {
 }
 $("#scanPassBtn").onclick = () => (curStation === PRIZE ? openCam("lookup") : openCam("stamp"));
 
-// ---------------------------------------------------------------- prize point: ticket → draw → hand out
+// ---------------------------------------------------------------- prize counter: ticket → raffle slip
 $("#tkScanBtn").onclick = () => openCam("ticket");
 $("#tkForm").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -255,11 +246,8 @@ function ticketHead(j) {
   return `<div class="tkm-head"><span class="id">${esc(p.id)}</span><h3>${esc(p.name)}</h3><div class="meta">${esc(p.school || "")} · ${ROLE_TH[p.role] || ""}</div>
     <div class="tkm-n ${n >= REQUIRED ? "ok" : "no"}">${n >= REQUIRED ? "✓" : "✗"} สะสม ${n}/${BOOTH_IDS.length} ตรา</div></div>`;
 }
-function resultBox(d, pid) {
-  if (!d.win) return `<div class="tkm-res lose"><b>ไม่ได้รางวัล</b><span>ปีหน้ามาลุ้นใหม่นะ! ขอบคุณที่ร่วมกิจกรรม</span></div>`;
-  return `<div class="tkm-res win"><small>ได้รับรางวัล</small><b>🎉 ${esc(d.prize.name)}</b>
-    ${d.claimed ? `<span>✓ มอบแล้ว ${fmt(d.claimed)} โดย ${esc(d.claimedBy || "")}</span>` : `<button class="btn gold wide" type="button" data-give="${esc(pid)}">มอบรางวัลแล้ว</button>`}</div>`;
-}
+const slipBox = (r) => `<div class="tkm-res win"><small>✓ ตั๋วผ่าน · ${fmt(r.at)}</small><b>ยื่นใบจับฉลากให้ได้เลย</b>
+  <span>ให้ผู้เข้าร่วม<strong>${esc(EVENT.raffle.slip)}</strong> · ${esc(EVENT.raffle.announce)}</span></div>`;
 async function openTicket(id) {
   sfx.unlock();
   modal(`<p>กำลังตรวจตั๋ว ${esc(id)}…</p>`);
@@ -267,44 +255,34 @@ async function openTicket(id) {
   try { j = await api(`/api/passport/${id}`); }
   catch (e) { modal(`<div class="tkm-res lose"><b>ตรวจตั๋วไม่ได้</b><span>${esc(e.message)}</span></div><button class="btn ghost wide" type="button" data-mclose>ปิด</button>`); buzz([80, 40, 80]); return; }
   const n = BOOTH_IDS.filter((b) => j.stamps[b]).length;
-  if (j.draw) {
-    modal(`${ticketHead(j)}<p class="tkm-note">ตั๋วนี้ลุ้นไปแล้วเมื่อ ${fmt(j.draw.at)}</p>${resultBox(j.draw, id)}<button class="btn ghost wide" type="button" data-mclose>ปิด</button>`);
-    buzz([40, 40, 40]);
-    return;
-  }
-  if (n < REQUIRED) {
-    modal(`${ticketHead(j)}<div class="tkm-res lose"><b>ยังไม่มีสิทธิ์ลุ้น</b><span>ขาดอีก ${REQUIRED - n} ตรา</span></div><button class="btn ghost wide" type="button" data-mclose>ปิด</button>`);
+  if (j.redeem) {
+    modal(`${ticketHead(j)}<div class="tkm-res lose"><b>ตั๋วนี้ใช้ไปแล้ว</b><span>ยื่นเมื่อ ${fmt(j.redeem.at)}${j.redeem.by ? " · สแกนโดย " + esc(j.redeem.by) : ""} — ไม่ต้องให้ใบจับฉลากซ้ำ</span></div><button class="btn ghost wide" type="button" data-mclose>ปิด</button>`);
     buzz([80, 40, 80]);
     return;
   }
-  modal(`${ticketHead(j)}<button class="tkm-draw" type="button" data-draw="${esc(id)}"><span>🎲</span>กดลุ้นรางวัล</button><button class="btn ghost wide" type="button" data-mclose>ยกเลิก</button>`);
+  if (n < REQUIRED) {
+    modal(`${ticketHead(j)}<div class="tkm-res lose"><b>ยังไม่มีสิทธิ์</b><span>ขาดอีก ${REQUIRED - n} ตรา</span></div><button class="btn ghost wide" type="button" data-mclose>ปิด</button>`);
+    buzz([80, 40, 80]);
+    return;
+  }
+  modal(`${ticketHead(j)}<button class="tkm-draw" type="button" data-redeem="${esc(id)}"><span>🎟️</span>ยืนยันรับตั๋ว</button><p class="tkm-note">กดแล้วตั๋วนี้จะใช้ซ้ำไม่ได้</p><button class="btn ghost wide" type="button" data-mclose>ยกเลิก</button>`);
   sfx.pop(); buzz(40);
 }
-async function drawFor(id, btn) {
+async function redeemFor(id, btn) {
   btn.disabled = true;
-  const names = [...EVENT.prizes.map((p) => p.name), "ลุ้น…"];
-  let i = 0;
-  btn.outerHTML = `<div class="tkm-spin" id="tkSpin"><span>${esc(names[0])}</span></div>`;
-  const spin = setInterval(() => { const el = $("#tkSpin span"); if (el) el.textContent = names[i++ % names.length]; sfx.tick(); }, 120);
-  const t0 = Date.now();
-  let j, err;
-  try { j = await api("/api/draw", { pid: id }); } catch (e) { err = e; }
-  await new Promise((r) => setTimeout(r, Math.max(0, 2600 - (Date.now() - t0))));
-  clearInterval(spin);
-  if (err) { modal(`<div class="tkm-res lose"><b>ลุ้นไม่สำเร็จ</b><span>${esc(err.message)}</span></div><button class="btn ghost wide" type="button" data-mclose>ปิด</button>`); return; }
-  modal(`${ticketHead(j)}${resultBox(j.draw, id)}<button class="btn ghost wide" type="button" data-mclose>ปิด</button>`);
-  if (j.draw.win) { sfx.win(); buzz([40, 60, 120]); fireworks(2400); burst(innerWidth / 2, innerHeight / 2, 120, 1.1); }
-  else { sfx.lose(); buzz(60); }
-}
-$("#modalCard").addEventListener("click", async (e) => {
-  const d = e.target.closest("[data-draw]");
-  if (d) { drawFor(d.dataset.draw, d); return; }
-  const g = e.target.closest("[data-give]");
-  if (g) {
-    g.disabled = true;
-    try { const j = await api("/api/claim", { pid: g.dataset.give }); g.outerHTML = `<span>✓ มอบแล้ว ${fmt(j.draw.claimed)}</span>`; toast("บันทึกการมอบรางวัลแล้ว"); sfx.pop(); }
-    catch (ex) { toast(ex.message, true); g.disabled = false; }
+  let j;
+  try { j = await api("/api/redeem", { pid: id }); }
+  catch (e) { modal(`<div class="tkm-res lose"><b>ไม่สำเร็จ</b><span>${esc(e.message)}</span></div><button class="btn ghost wide" type="button" data-mclose>ปิด</button>`); buzz([80, 40, 80]); return; }
+  if (!j.fresh) {
+    modal(`${ticketHead(j)}<div class="tkm-res lose"><b>ตั๋วนี้ใช้ไปแล้ว</b><span>ยื่นเมื่อ ${fmt(j.redeem.at)}${j.redeem.by ? " · สแกนโดย " + esc(j.redeem.by) : ""}</span></div><button class="btn ghost wide" type="button" data-mclose>ปิด</button>`);
+    return;
   }
+  modal(`${ticketHead(j)}${slipBox(j.redeem)}<button class="btn wide" type="button" data-mclose>เสร็จ · สแกนคนต่อไป</button>`);
+  sfx.win(); buzz([40, 60, 120]); burst(innerWidth / 2, innerHeight / 2, 90, 1);
+}
+$("#modalCard").addEventListener("click", (e) => {
+  const d = e.target.closest("[data-redeem]");
+  if (d) redeemFor(d.dataset.redeem, d);
 });
 
 // ---------------------------------------------------------------- lookup
@@ -317,24 +295,21 @@ async function showPassport(id) {
   out.innerHTML = `<div class="pcard">กำลังค้นหา ${esc(id)}…</div>`;
   try {
     const j = await api(`/api/passport/${id}`);
-    const p = j.passport, d = j.draw;
+    const p = j.passport, r = j.redeem;
     const n = BOOTH_IDS.filter((b) => j.stamps[b]).length;
     out.innerHTML = `<div class="pcard"><span class="id">${esc(p.id)}</span><h3>${esc(p.name)}</h3><div class="meta">${esc(p.school || "")} · ${ROLE_TH[p.role] || ""} · สะสม ${n}/${BOOTH_IDS.length} ตรา</div>
       <div class="pstamps">${EVENT.booths.map((b) => `<div class="${j.stamps[b.id] ? "on" : ""}" style="--c:${b.color}"><i>${b.no}</i>${esc(b.th)}${j.stamps[b.id] ? ` · ${fmt(j.stamps[b.id])}` : ""}</div>`).join("")}</div>
-      ${d ? (d.win
-        ? `<div class="drawbox win"><small>ผลลุ้น · ${fmt(d.at)}</small><b>🎁 ${esc(d.prize.name)}</b>${d.claimed ? `<div>✓ มอบแล้วเมื่อ ${fmt(d.claimed)} โดย ${esc(d.claimedBy || "")}</div><button class="btn ghost" type="button" data-unclaim="${esc(p.id)}">ยกเลิกการมอบ (กดผิด)</button>` : `<button class="btn gold" type="button" data-claim2="${esc(p.id)}">ยืนยันมอบรางวัล</button>`}</div>`
-        : `<div class="drawbox lose"><small>ผลลุ้น · ${fmt(d.at)}</small><b>ไม่ได้รางวัล</b></div>`)
-        : `<div class="drawbox none">${n >= REQUIRED ? "สะสมครบแล้ว · ยังไม่ได้ลุ้น" : `ยังสะสมไม่ครบ (ขาด ${REQUIRED - n} ตรา)`}</div>`}</div>`;
+      ${r ? `<div class="drawbox win"><small>ยื่นตั๋วแล้ว · ${fmt(r.at)}${r.by ? " · สแกนโดย " + esc(r.by) : ""}</small><b>✓ มีสิทธิ์จับฉลาก</b>${A.role === "admin" ? `<button class="btn ghost" type="button" data-unredeem="${esc(p.id)}">ยกเลิกการยื่นตั๋ว (สแกนผิด)</button>` : ""}</div>`
+        : `<div class="drawbox none">${n >= REQUIRED ? "สะสมครบแล้ว · ยังไม่ได้ยื่นตั๋ว" : `ยังสะสมไม่ครบ (ขาด ${REQUIRED - n} ตรา)`}</div>`}</div>`;
   } catch (e) { out.innerHTML = `<div class="pcard">${esc(e.message)}</div>`; }
 }
 $("#lookupOut").addEventListener("click", async (e) => {
-  const c = e.target.closest("[data-claim2],[data-unclaim]");
+  const c = e.target.closest("[data-unredeem]");
   if (!c) return;
-  const pid = c.dataset.claim2 || c.dataset.unclaim;
-  const undo = !!c.dataset.unclaim;
-  if (undo && !confirm("ยกเลิกการมอบรางวัลของรหัสนี้?")) return;
+  const pid = c.dataset.unredeem;
+  if (!confirm("ยกเลิกการยื่นตั๋วของรหัสนี้? (ใช้เมื่อสแกนผิดคนเท่านั้น)")) return;
   c.disabled = true;
-  try { await api("/api/claim", { pid, undo }); toast(undo ? "ยกเลิกแล้ว" : "บันทึกการมอบรางวัลแล้ว"); sfx.pop(); showPassport(pid); }
+  try { await api("/api/admin/unredeem", { pid }); toast("ยกเลิกแล้ว"); showPassport(pid); }
   catch (ex) { toast(ex.message, true); c.disabled = false; }
 });
 
@@ -346,59 +321,38 @@ async function admin() {
   timers.push(setInterval(() => { if (!document.hidden) loadAdmin(true); }, 30000));
 }
 async function loadAdmin(quiet = false) {
-  try { S = await api("/api/admin/summary"); renderAdmin(quiet); }
+  try { S = await api("/api/admin/summary"); renderAdmin(); if (!quiet) loadRedeemed(); }
   catch (e) { $("#admUpdated").textContent = e.message; }
 }
-function renderAdmin(quiet) {
+function renderAdmin() {
   $("#admUpdated").textContent = "อัปเดต " + fmt(Date.now());
   const k = [
     ["ผู้เปิดสมุด", S.passports, `นร. ${S.roles.student || 0} · ครู ${S.roles.teacher || 0} · ทั่วไป ${S.roles.guest || 0}`],
     ["ตราที่ให้ทั้งหมด", Object.values(S.booths).reduce((a, b) => a + b, 0), "ดวง"],
     ["สะสมครบ", S.completed, S.passports ? Math.round((S.completed / S.passports) * 100) + "% ของผู้เปิดสมุด" : ""],
-    ["ลุ้นแล้ว", S.draws, `ได้รางวัล ${S.wins} คน`],
-    ["มอบรางวัลแล้ว", S.claimed, `ค้างรับ ${S.wins - S.claimed}`],
-    ["ของรางวัลเหลือ", S.prizes.filter((p) => p.active).reduce((a, p) => a + p.remaining, 0), "ชิ้น"],
+    ["ยื่นตั๋วแล้ว", S.redeemed, "= ใบจับฉลากในกล่อง"],
+    ["ครบแต่ยังไม่ยื่น", Math.max(0, S.completed - S.redeemed), "คน"],
   ];
   $("#kpis").innerHTML = k.map(([a, b, c]) => `<div class="kpi"><span>${a}</span><b>${Number(b).toLocaleString("th-TH")}</b><small>${c}</small></div>`).join("");
   const max = Math.max(1, ...Object.values(S.booths));
   $("#boothBars").innerHTML = EVENT.booths.map((b) => `<div class="barrow" style="--c:${b.color}"><span>${b.no}. ${esc(b.th)}</span><span class="track"><i style="width:${((S.booths[b.id] || 0) / max) * 100}%"></i></span><b>${S.booths[b.id] || 0}</b></div>`).join("");
-  if (!quiet || !document.activeElement || !document.activeElement.closest(".panel")) {
-    renderPrizeRows(S.prizes);
-    $("#setRate").value = Math.round(S.settings.winRate * 100);
-    $("#setExpected").value = S.settings.expected || "";
-  }
 }
-function renderPrizeRows(list) {
-  const arts = [["doll", "ตุ๊กตา"], ["pen", "เครื่องเขียน"], ["fan", "พัดลม"], ["gift", "ของขวัญ"]];
-  $("#prizeTable").innerHTML = list.map((p) => `<div class="prow" data-id="${esc(p.id)}">
-    <label class="field"><span>ชื่อรางวัล</span><input class="input" data-k="name" value="${esc(p.name)}" maxlength="60"></label>
-    <label class="field"><span>จำนวนทั้งหมด</span><input class="input" data-k="total" type="number" min="0" value="${p.total}"></label>
-    <label class="field"><span>คงเหลือ</span><input class="input" data-k="remaining" type="number" min="0" value="${p.remaining}"></label>
-    <label class="field"><span>รูป</span><select class="input" data-k="art">${arts.map(([v, t]) => `<option value="${v}" ${p.art === v ? "selected" : ""}>${t}</option>`).join("")}</select></label>
-    <label class="on"><input type="checkbox" data-k="active" ${p.active ? "checked" : ""}>เปิดแจก</label>
-    <span class="gauge"><i style="width:${p.total ? (p.remaining / p.total) * 100 : 0}%"></i></span></div>`).join("");
+
+// everyone who handed in a ticket (check a name drawn from the box)
+let RD = [];
+async function loadRedeemed() {
+  try { RD = (await api("/api/admin/redeemed")).list; renderRedeemed(); }
+  catch (e) { $("#rdInfo").textContent = e.message; }
 }
-function readPrizeRows() {
-  return $$("#prizeTable .prow").map((r) => {
-    const v = (k) => r.querySelector(`[data-k=${k}]`);
-    return { id: r.dataset.id, name: v("name").value, total: v("total").value, remaining: v("remaining").value, art: v("art").value, active: v("active").checked };
-  });
+function renderRedeemed() {
+  const q = $("#rdQ").value.trim().toLowerCase();
+  const list = q ? RD.filter((r) => [r.name, r.school, r.pid].some((v) => String(v || "").toLowerCase().includes(q))) : RD;
+  $("#rdInfo").textContent = q ? `พบ ${list.length} จาก ${RD.length} คน` : `ทั้งหมด ${RD.length} คน`;
+  $("#rdList").innerHTML = list.slice(0, 200).map((r) => `<div class="it"><b>${esc(r.name)}</b><time>${fmt(r.at)}</time><small>${esc(r.school || ROLE_TH[r.role] || "")} · ${esc(r.pid)}${r.staff ? " · " + esc(r.staff) : ""}</small></div>`).join("")
+    + (list.length > 200 ? `<p class="help">แสดง 200 รายการแรก พิมพ์ค้นหาเพื่อกรอง</p>` : "");
 }
-$("#addPrize").onclick = () => {
-  const rows = readPrizeRows();
-  rows.push({ id: "p" + Date.now().toString(36), name: "ของรางวัลใหม่", total: 10, remaining: 10, art: "gift", active: true });
-  renderPrizeRows(rows);
-};
-$("#savePrizes").onclick = async (e) => {
-  e.target.disabled = true;
-  try { S = await api("/api/admin/prizes", { prizes: readPrizeRows() }); renderAdmin(false); toast("บันทึกของรางวัลแล้ว"); }
-  catch (ex) { toast(ex.message, true); } finally { e.target.disabled = false; }
-};
-$("#saveSettings").onclick = async (e) => {
-  e.target.disabled = true;
-  try { S = await api("/api/admin/settings", { winRate: (+$("#setRate").value || 0) / 100, expected: +$("#setExpected").value || 0 }); renderAdmin(false); toast("บันทึกการตั้งค่าแล้ว"); }
-  catch (ex) { toast(ex.message, true); } finally { e.target.disabled = false; }
-};
+$("#rdQ").addEventListener("input", renderRedeemed);
+$("#rdForm").addEventListener("submit", (e) => { e.preventDefault(); loadRedeemed(); });
 $("#admRefresh").onclick = () => loadAdmin();
 $("#exportBtn").onclick = async () => {
   try {
@@ -414,7 +368,7 @@ $("#exportBtn").onclick = async () => {
 $("#resetBtn").onclick = async () => {
   if ($("#resetTxt").value.trim() !== "RESET") { toast("พิมพ์ RESET ให้ถูกต้องก่อน", true); return; }
   if (!confirm("ลบข้อมูลทั้งหมดจริงหรือไม่? ย้อนกลับไม่ได้")) return;
-  try { S = await api("/api/admin/reset", { confirm: "RESET" }); $("#resetTxt").value = ""; renderAdmin(false); toast("ล้างข้อมูลแล้ว"); }
+  try { S = await api("/api/admin/reset", { confirm: "RESET" }); $("#resetTxt").value = ""; renderAdmin(); loadRedeemed(); toast("ล้างข้อมูลแล้ว"); }
   catch (ex) { toast(ex.message, true); }
 };
 

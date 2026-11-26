@@ -38,6 +38,7 @@ const P = {
   download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
   logout: '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
   camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
 };
 
@@ -46,17 +47,42 @@ export const icon = (name, cls = "") =>
 
 export const iconPath = (name) => P[name] || P.star;
 
-// prize art (doll uses the mascot picture)
+// prize art: generic small appliances (no brands) for the prize showcase in the app and on posters
 export function prizeArt(art) {
-  if (art === "doll") return `<img class="prize-img" src="assets/geos-front.webp" alt="" width="118" height="156" loading="lazy" decoding="async">`;
-  if (art === "pen")
-    return `<svg class="prize-svg" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="pg1" x1="0" x2="1"><stop offset="0" stop-color="#0a98c7"/><stop offset="1" stop-color="#075f98"/></linearGradient><linearGradient id="pg2" x1="0" x2="1"><stop offset="0" stop-color="#2cc394"/><stop offset="1" stop-color="#148e64"/></linearGradient></defs>
-      <rect x="22" y="70" width="80" height="22" rx="4" fill="#a7d5db" transform="rotate(-18 62 81)"/><g transform="rotate(-18 62 81)" stroke="#075f98" stroke-width="2"><path d="M32 70v8M42 70v5M52 70v8M62 70v5M72 70v8M82 70v5M92 70v8"/></g>
-      <g transform="rotate(38 60 60)"><rect x="52" y="10" width="16" height="70" rx="3" fill="url(#pg1)"/><path d="M52 80h16l-8 18z" fill="#f4d9a8"/><path d="M57.5 92h5l-2.5 6z" fill="#0a2b42"/><rect x="52" y="10" width="16" height="10" rx="3" fill="#2cc394"/></g>
-      <g transform="rotate(-12 60 60)"><rect x="74" y="16" width="12" height="64" rx="6" fill="url(#pg2)"/><rect x="77" y="20" width="3" height="30" rx="1.5" fill="#fff" opacity=".5"/><path d="M74 80h12l-6 14z" fill="#0a2b42"/></g></svg>`;
+  if (art === "airfryer")
+    return `<svg class="prize-svg" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="afA" x1="0" x2="1"><stop offset="0" stop-color="#14324a"/><stop offset=".45" stop-color="#31607f"/><stop offset="1" stop-color="#0f2739"/></linearGradient></defs>
+      <ellipse cx="60" cy="109" rx="36" ry="5" fill="#062033" opacity=".16"/>
+      <path d="M30 34c0-14 8-22 22-22h16c14 0 22 8 22 22v66a6 6 0 0 1-6 6H36a6 6 0 0 1-6-6z" fill="url(#afA)"/>
+      <rect x="40" y="20" width="40" height="18" rx="6" fill="#0a1c2b"/><circle cx="50" cy="29" r="4" fill="#2cc394"/><rect x="58" y="24.5" width="15" height="3" rx="1.5" fill="#7fe0c8"/><rect x="58" y="30.5" width="9" height="3" rx="1.5" fill="#7fe0c8" opacity=".55"/>
+      <path d="M31 45h58" stroke="#000" stroke-opacity=".28" stroke-width="2"/>
+      <rect x="35" y="51" width="50" height="49" rx="7" fill="#0b2031"/><rect x="42" y="58" width="36" height="19" rx="5" fill="#0a98c7" opacity=".38"/><path d="M45 62h11" stroke="#fff" stroke-opacity=".55" stroke-width="2.5" stroke-linecap="round"/>
+      <rect x="46" y="85" width="28" height="9" rx="4.5" fill="#2cc394"/><path d="M36 17c-3 7-4 15-4 25" stroke="#fff" stroke-opacity=".2" stroke-width="3" stroke-linecap="round" fill="none"/></svg>`;
+  if (art === "kettle")
+    return `<svg class="prize-svg" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="ktA" x1="0" x2="1"><stop offset="0" stop-color="#d4eef1"/><stop offset=".45" stop-color="#fff"/><stop offset="1" stop-color="#b5dde3"/></linearGradient></defs>
+      <ellipse cx="58" cy="109" rx="40" ry="5" fill="#062033" opacity=".16"/>
+      <path d="M78 38c16 0 20 9 20 25s-4 25-16 27" fill="none" stroke="#0a98c7" stroke-width="9" stroke-linecap="round"/>
+      <path d="M33 46 12 31l-3 5 22 22z" fill="#c6e6ea" stroke="#a7d5db" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M35 30h44l8 66H27z" fill="url(#ktA)" stroke="#a7d5db" stroke-width="2" stroke-linejoin="round"/>
+      <rect x="37" y="22" width="40" height="10" rx="5" fill="#0a98c7"/><rect x="51" y="15" width="12" height="9" rx="4" fill="#075f98"/>
+      <rect x="44" y="50" width="7" height="36" rx="3.5" fill="#0a98c7" opacity=".3"/><rect x="44" y="68" width="7" height="18" rx="3.5" fill="#0a98c7" opacity=".55"/>
+      <rect x="22" y="95" width="70" height="11" rx="4" fill="#075f98"/><circle cx="80" cy="100.5" r="2.5" fill="#2cc394"/></svg>`;
+  if (art === "hairdryer")
+    return `<svg class="prize-svg" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="hdA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ad3a3"/><stop offset="1" stop-color="#128a63"/></linearGradient></defs>
+      <ellipse cx="66" cy="111" rx="28" ry="4" fill="#062033" opacity=".16"/>
+      <g stroke="#0a98c7" stroke-width="3" stroke-linecap="round" opacity=".55"><path d="M2 38h9M0 47h11M2 56h9"/></g>
+      <path d="M64 56 78 103a6 6 0 0 1-5.6 7.6h-6.6a6 6 0 0 1-5.8-4.6L52 60z" fill="#075f98"/><rect x="66" y="74" width="6" height="13" rx="3" fill="#2cc394" transform="rotate(-16 69 80)"/>
+      <rect x="24" y="31" width="72" height="32" rx="16" fill="url(#hdA)"/><path d="M34 37h40" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+      <rect x="15" y="35" width="15" height="24" rx="4" fill="#0a2b42"/>
+      <circle cx="94" cy="47" r="21" fill="#15a8a0"/><circle cx="94" cy="47" r="14" fill="#0d6f6a"/><g stroke="#3ad3a3" stroke-width="2"><path d="M84 47h20M94 37v20M87 40l14 14M101 40 87 54"/></g></svg>`;
+  if (art === "pillow")
+    return `<svg class="prize-svg" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="npA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fd0f2"/><stop offset="1" stop-color="#075f98"/></linearGradient></defs>
+      <ellipse cx="60" cy="106" rx="42" ry="6" fill="#062033" opacity=".16"/>
+      <path d="M34 90C19 82 13 66 15 52c3-21 22-34 45-34s42 13 45 34c2 14-4 30-19 38" fill="none" stroke="url(#npA)" stroke-width="27" stroke-linecap="round"/>
+      <path d="M22 62c-1-16 9-30 28-34" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="5" stroke-linecap="round"/>
+      <g fill="#fff" opacity=".45"><circle cx="60" cy="18" r="2"/><circle cx="84" cy="24" r="2"/><circle cx="36" cy="24" r="2"/><circle cx="100" cy="44" r="2"/><circle cx="20" cy="44" r="2"/></g></svg>`;
   if (art === "fan")
     return `<svg class="prize-svg spin-fan" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="fg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a98c7"/><stop offset="1" stop-color="#15a8a0"/></linearGradient></defs>
-      <rect x="54" y="66" width="12" height="44" rx="6" fill="#075f98"/><circle cx="60" cy="48" r="38" fill="#e9f6f8" stroke="url(#fg1)" stroke-width="6"/>
+      <rect x="54" y="66" width="12" height="42" rx="6" fill="#075f98"/><rect x="36" y="104" width="48" height="9" rx="4.5" fill="#075f98"/><circle cx="60" cy="48" r="38" fill="#e9f6f8" stroke="url(#fg1)" stroke-width="6"/>
       <g class="blades" fill="#2cc394"><path d="M60 48c-4-14 2-26 10-26 6 0 6 14-10 26z"/><path d="M60 48c14-4 26 2 26 10 0 6-14 6-26-10z"/><path d="M60 48c4 14-2 26-10 26-6 0-6-14 10-26z"/><path d="M60 48c-14 4-26-2-26-10 0-6 14-6 26 10z"/></g>
       <circle cx="60" cy="48" r="6" fill="#075f98"/><g stroke="#075f98" stroke-opacity=".25" stroke-width="1.5" fill="none"><circle cx="60" cy="48" r="20"/><circle cx="60" cy="48" r="30"/></g></svg>`;
   return `<svg class="prize-svg" viewBox="0 0 120 120" aria-hidden="true"><rect x="20" y="50" width="80" height="56" rx="8" fill="#2cc394"/><rect x="14" y="36" width="92" height="20" rx="6" fill="#148e64"/><rect x="54" y="36" width="12" height="70" fill="#fcfdfd"/><path d="M60 36c-8-18-30-18-30-4 0 8 18 6 30 4zm0 0c8-18 30-18 30-4 0 8-18 6-30 4z" fill="#0a98c7"/></svg>`;

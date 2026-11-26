@@ -61,7 +61,7 @@ async function stamp(env, req) {
   const b = await body(req);
   const p = parsePayload(b.c);
   if (!p) return fail(400, "code", "รหัสไม่ถูกต้อง");
-  if (p.booth === EVENT.prizePoint.id) return fail(400, "prize", "นี่คือ QR จุดลุ้นรางวัล");
+  if (p.booth === EVENT.prizePoint.id) return fail(400, "prize", "นี่คือ QR เคาน์เตอร์แลกรางวัล");
   if (!BOOTH_IDS.includes(p.booth)) return fail(400, "code", "ไม่พบบูธนี้");
   const lk = "code:" + pid;
   if (await isLimited(env, lk, 15)) return fail(429, "slow", "ใส่รหัสผิดหลายครั้ง รอ 10 นาทีแล้วลองใหม่");

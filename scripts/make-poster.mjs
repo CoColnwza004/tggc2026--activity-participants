@@ -49,14 +49,20 @@ const ticket = (cls = "") => `<div class="tk ${cls}">
   <div class="tk-top"><small>TGGC 2026 · LUCKY DRAW</small><b>ตั๋วลุ้นรางวัล</b></div>
   <div class="tk-mid">${finalSealHTML()}</div>
   <div class="tk-cut"></div>
-  <div class="tk-bot">ครบ ${REQUIRED} ตรา<br>ยื่นที่จุดลุ้นรางวัล</div></div>`;
+  <div class="tk-bot">ครบ ${REQUIRED} ตรา<br>ยื่นที่เคาน์เตอร์แลกรางวัล</div></div>`;
 
-const prizes = EVENT.prizes.map((p) => `<div class="pz"><div class="pz-art">${prizeArt(p.art)}</div><b>${p.name}</b></div>`).join("");
+// prize pile: generic small appliances on a podium (illustration only; see EVENT.prizeNote)
+const art = (k) => prizeArt(k);
+const pile = `<div class="pile"><i class="pod"></i><i class="pod-top"></i><i class="glow"></i>
+  <span class="pi fan">${art("fan")}</span><span class="pi fry">${art("airfryer")}</span><span class="pi ket">${art("kettle")}</span>
+  <span class="pi gb">${art("gift")}</span><span class="pi dry">${art("hairdryer")}</span><span class="pi pil">${art("pillow")}</span><span class="pi gs">${art("gift")}</span></div>`;
+const prizeBox = (cls = "") => `<div class="prizes ${cls}"><i class="rays"></i><div class="pz-copy"><small>PRIZES · ของรางวัล</small><h2>ลุ้นรับ<br><em>เครื่องใช้ไฟฟ้า</em></h2>
+  <p>และของรางวัลอีกมากมาย!</p><span class="pz-note">${EVENT.prizeNote}</span></div>${pile}</div>`;
 
 const steps = [
   ["qr", "สแกน QR", "เปิดสมุดสะสมตราในมือถือ<br>ไม่ต้องโหลดแอป"],
   ["stamp", `ตะลุย ${B.length} บูธ`, "ร่วมกิจกรรม แล้วสแกน QR<br>ที่บูธเพื่อรับตราจีออส"],
-  ["gift", "รับตั๋ว ลุ้นรางวัล", `ครบ ${REQUIRED} ตรา รับตั๋ว<br>ให้เจ้าหน้าที่สแกนลุ้นเลย!`],
+  ["gift", "รับตั๋ว ลุ้นรางวัล", `ครบ ${REQUIRED} ตรา ยื่นตั๋วให้สแกน<br>เขียนชื่อหย่อนกล่องจับฉลาก`],
 ];
 const stepIcon = { qr: icon("qr"), stamp: icon("passport"), gift: icon("gift") };
 const stepsHTML = steps.map(([k, t, d], i) => `<div class="step"><span class="n">${i + 1}</span><span class="si">${stepIcon[k]}</span><b>${t}</b><p>${d}</p></div>`).join("");
@@ -137,15 +143,31 @@ h1 .l3{color:var(--gold);text-shadow:0 0 40px rgba(255,209,102,.4)}
 .step .si .ico{color:#fff}
 .step b{font-family:var(--f-display);font-weight:700;line-height:1.2}
 .step p{margin:0;color:rgba(233,246,248,.82);line-height:1.45}
-/* prizes */
-.prizes{position:relative;border-radius:34px;background:linear-gradient(150deg,#fff6d2,#f6d77a 45%,#e9b949);color:#2b1d00;box-shadow:0 0 0 5px rgba(233,185,73,.25),0 0 90px rgba(233,185,73,.35)}
-.prizes h2{margin:0;font-family:var(--f-display);font-weight:800;line-height:1.1}
-.prizes h2 small{display:block;font-family:var(--f-tech);font-weight:700;letter-spacing:.2em;opacity:.65}
-.pzs{display:grid;grid-template-columns:repeat(3,1fr)}
-.pz{display:grid;justify-items:center;text-align:center}
-.pz-art{display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle,#fff 0,#fffaf0 55%,rgba(255,255,255,.4) 72%,transparent 73%)}
-.pz-art img,.pz-art svg{width:72%;height:72%;object-fit:contain}
-.pz b{font-family:var(--f-display);font-weight:700;line-height:1.2}
+/* prizes: copy + appliance pile */
+.prizes{position:relative;border-radius:34px;background:radial-gradient(120% 90% at 80% 100%,#fff3c4 0,#f6d77a 40%,#e9b949 75%,#d99a2b);color:#2b1d00;box-shadow:0 0 0 5px rgba(233,185,73,.25),0 0 90px rgba(233,185,73,.35);display:grid;grid-template-columns:auto 1fr;align-items:center}
+.prizes .rays{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.prizes .rays:before{content:"";position:absolute;right:-30%;bottom:-60%;width:160%;aspect-ratio:1;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.26) 0 7deg,transparent 7deg 18deg);-webkit-mask:radial-gradient(closest-side,#000 30%,transparent);mask:radial-gradient(closest-side,#000 30%,transparent)}
+.pz-copy{position:relative;z-index:2}
+.pz-copy small{display:block;font-family:var(--f-tech);font-weight:700;letter-spacing:.2em;opacity:.7}
+.prizes h2{margin:0;font-family:var(--f-display);font-weight:800;line-height:1.08}
+.prizes h2 em{font-style:normal;display:inline-block;padding:0 .18em .04em;border-radius:.2em;background:#c8102e;color:#fff;box-shadow:0 .08em 0 #8e0b20;transform:rotate(-2deg);white-space:nowrap;margin-top:.08em}
+.pz-copy p{margin:.35em 0 0;font-family:var(--f-display);font-weight:700}
+.pz-note{display:block;margin-top:.6em;font-size:12px;opacity:.7;line-height:1.3}
+.pile{position:relative;z-index:1;aspect-ratio:1.5}
+.pile .pod{position:absolute;left:3%;right:3%;bottom:0;height:22%;border-radius:50%;background:linear-gradient(#b30f2a,#7c0a1c);box-shadow:0 10px 20px rgba(80,20,0,.35)}
+.pile .pod-top{position:absolute;left:3%;right:3%;bottom:7%;height:22%;border-radius:50%;background:radial-gradient(70% 90% at 50% 30%,#ff5a6e,#d4183a 60%,#b30f2a);box-shadow:inset 0 3px 0 rgba(255,255,255,.35)}
+.pile .glow{position:absolute;left:10%;right:10%;top:0;bottom:20%;background:radial-gradient(closest-side,rgba(255,255,255,.75),transparent);}
+.pi{position:absolute;display:block;filter:drop-shadow(0 6px 8px rgba(60,30,0,.28))}
+.pi svg{display:block;width:100%;height:auto}
+.pi.fan{left:0;bottom:18%;width:31%}
+.pi.fry{left:23%;bottom:19%;width:27%}
+.pi.ket{left:46%;bottom:19%;width:27%}
+.pi.gb{right:0;bottom:19%;width:28%}
+.pi.dry{left:6%;bottom:2%;width:30%;transform:rotate(-6deg)}
+.pi.pil{left:38%;bottom:0;width:25%}
+.pi.gs{right:8%;bottom:2%;width:18%;transform:rotate(8deg)}
+.prizes.stack{grid-template-columns:1fr;text-align:center;justify-items:center}
+
 /* QR */
 .qrb{display:flex;align-items:center;border-radius:34px;background:#fff;color:var(--ink);box-shadow:0 0 0 6px rgba(44,195,148,.35),0 0 90px rgba(44,195,148,.35),0 40px 80px -20px rgba(0,0,0,.6)}
 .qr svg{display:block;width:100%;height:100%}
@@ -183,11 +205,11 @@ h1 .l3{color:var(--gold);text-shadow:0 0 40px rgba(255,209,102,.4)}
 .a4 .step .n{top:-18px;left:18px;width:42px;height:42px;font-size:23px}
 .a4 .step .si{width:70px;height:70px}.a4 .step .si .ico{width:36px;height:36px}
 .a4 .step b{font-size:27px}.a4 .step p{font-size:17.5px}
-.a4 .duo{display:grid;grid-template-columns:1fr 500px;gap:22px;margin-top:26px}
-.a4 .prizes{padding:22px 24px 20px}.a4 .prizes h2{font-size:40px}.a4 .prizes h2 small{font-size:16px;margin-bottom:4px}
-.a4 .pzs{margin-top:14px;gap:10px}.a4 .pz{gap:8px}.a4 .pz-art{width:116px;height:116px}.a4 .pz b{font-size:21px}
-.a4 .qrb{padding:22px;gap:20px}.a4 .qr{width:196px;height:196px;flex:none}
-.a4 .qrt small{font-size:14px}.a4 .qrt b{font-size:52px;margin:4px 0;white-space:nowrap}.a4 .qrt span{font-size:21px}.a4 .qrt code{margin-top:12px;padding:6px 8px;font-size:12.5px;white-space:nowrap}
+.a4 .duo{display:grid;grid-template-columns:1fr 440px;gap:20px;margin-top:34px}
+.a4 .prizes{padding:18px 8px 14px 24px;gap:0;grid-template-columns:262px 1fr}.a4 .pz-copy small{font-size:13px;margin-bottom:6px}.a4 .prizes h2{font-size:38px}.a4 .pz-copy p{font-size:21px}.a4 .pz-note{font-size:11.5px;max-width:225px}
+.a4 .pile{width:112%;margin:-58px -4% -6px -6%}
+.a4 .qrb{padding:20px;gap:16px}.a4 .qr{width:184px;height:184px;flex:none}
+.a4 .qrt small{font-size:13px}.a4 .qrt b{font-size:44px;margin:4px 0;white-space:nowrap}.a4 .qrt span{font-size:21px}.a4 .qrt code{margin-top:12px;padding:5px 7px;font-size:11px;white-space:nowrap}
 .a4 .bottom{display:grid;gap:12px;margin-top:24px}
 .a4 .where{gap:14px}.a4 .where .ico{width:46px;height:46px}.a4 .where b{font-size:30px}.a4 .where span{font-size:21px}
 .a4 .partners h3{font-size:15px;margin-bottom:10px}.a4 .chips{gap:6px}.a4 .chips span{padding:3px 11px;font-size:13.5px}.a4 .chips span em{margin-right:5px}
@@ -210,9 +232,9 @@ h1 .l3{color:var(--gold);text-shadow:0 0 40px rgba(255,209,102,.4)}
 .soc .tk-cut:before,.soc .tk-cut:after{width:26px;height:26px;top:-14px}
 .soc .s1{right:520px;top:500px;width:38px}.soc .s2{right:40px;top:330px;width:28px}.soc .s3{right:250px;top:870px;width:24px}
 .soc .lede{margin:18px 0 0;font-size:24px;line-height:1.5;color:rgba(233,246,248,.9);max-width:430px}.soc .lede b{color:#fff}
-.soc .row{position:absolute;left:60px;right:60px;bottom:52px;display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:stretch}
-.soc .prizes{padding:20px 18px}.soc .prizes h2{font-size:32px;text-align:center}.soc .prizes h2 small{font-size:12px}
-.soc .pzs{margin-top:10px;gap:4px}.soc .pz{gap:6px}.soc .pz-art{width:104px;height:104px}.soc .pz b{font-size:16px}
+.soc .row{position:absolute;left:60px;right:60px;bottom:52px;display:grid;grid-template-columns:1.2fr 1fr;gap:22px;align-items:stretch}
+.soc .prizes{padding:16px 6px 12px 20px;grid-template-columns:206px 1fr}.soc .pz-copy small{font-size:10.5px;margin-bottom:4px}.soc .prizes h2{font-size:28px}.soc .pz-copy p{font-size:17px}.soc .pz-note{font-size:10px}
+.soc .pile{width:112%;margin:-70px -8% -6px -2%}
 .soc .qrb{padding:18px;gap:16px}.soc .qr{width:170px;height:170px;flex:none}
 .soc .qrt small{font-size:11px}.soc .qrt b{font-size:40px;margin:2px 0}.soc .qrt span{font-size:17px}.soc .qrt code{margin-top:8px;padding:4px 6px;font-size:10.5px;white-space:nowrap}
 .soc .where{position:absolute;left:60px;bottom:380px;gap:12px}.soc .where .ico{width:40px;height:40px}.soc .where b{font-size:26px}.soc .where span{font-size:18px}
@@ -223,41 +245,41 @@ h1 .l3{color:var(--gold);text-shadow:0 0 40px rgba(255,209,102,.4)}
 .sto .date{width:150px;height:150px;align-content:center;gap:2px}.sto .date small{font-size:20px}.sto .date b{font-size:68px}.sto .date span{font-size:20px}
 .sto .kick{margin-top:50px;padding:10px 20px;font-size:18px}
 .sto h1{margin-top:18px;font-size:150px;text-align:left}.sto h1 .l3{font-size:118px;margin-top:8px}
-.sto .globe{left:50%;margin-left:-730px;top:520px;width:1460px;height:1460px}
-.sto .geos{left:50%;margin-left:-190px;top:850px;height:470px}
-.sto .pp{left:44px;top:1110px;width:270px;padding:14px 14px 12px;transform:rotate(-10deg)}
+.sto .globe{left:50%;margin-left:-680px;top:400px;width:1360px;height:1360px}
+.sto .geos{left:50%;margin-left:-70px;top:840px;height:390px}
+.sto .pp{left:44px;top:900px;width:270px;padding:14px 14px 12px;transform:rotate(-10deg)}
 .sto .pp-h{padding-bottom:7px;margin-bottom:5px}.sto .pp-h b{font-size:14px}.sto .pp-h span{font-size:13px}
 .sto .slot.empty i{font-size:15px}.sto .pp-bar{height:9px;margin-top:7px}
 .sto .stamp .st-seal{box-shadow:0 0 0 2px var(--paper),0 0 0 3px var(--ink)}
-.sto .tk{right:36px;top:1130px;width:210px;padding:16px 14px 14px;transform:rotate(10deg)}
+.sto .tk{right:36px;top:880px;width:210px;padding:16px 14px 14px;transform:rotate(10deg)}
 .sto .tk-top small{font-size:11px}.sto .tk-top b{font-size:28px}.sto .tk-mid{padding:6px 0 10px}.sto .tk-mid .stamp{width:124px}.sto .tk-bot{padding-top:10px;font-size:14px}
-.sto .s1{left:120px;top:1010px;width:44px}.sto .s2{right:110px;top:980px;width:32px}.sto .s3{right:300px;top:1380px;width:26px}
+.sto .s1{left:360px;top:1190px;width:40px}.sto .s2{right:110px;top:780px;width:32px}.sto .s3{right:330px;top:1180px;width:26px}
 .sto .where{margin-top:30px;gap:12px}.sto .where .ico{width:44px;height:44px}.sto .where b{font-size:30px}.sto .where span{font-size:20px}
 .sto .qrb{position:absolute;left:70px;right:70px;bottom:120px;padding:24px;gap:24px}.sto .qr{width:220px;height:220px;flex:none}
 .sto .qrt small{font-size:14px}.sto .qrt b{font-size:60px;margin:4px 0}.sto .qrt span{font-size:22px}.sto .qrt code{margin-top:12px;padding:6px 8px;font-size:13px;white-space:nowrap}
-.sto .tagline{position:absolute;left:70px;right:70px;bottom:440px;text-align:center;font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1.35}
-.sto .tagline em{font-style:normal;color:var(--gold)}
+.sto .prizes{position:absolute;left:70px;right:70px;bottom:420px;padding:22px 14px 18px 34px;grid-template-columns:372px 1fr}.sto .pz-copy small{font-size:14px;margin-bottom:6px}.sto .prizes h2{font-size:52px}.sto .pz-copy p{font-size:27px}.sto .pz-note{font-size:13px}
+.sto .pile{width:110%;margin:-80px -4% -8px -4%}
 `;
 
 const spark = (cls) => `<svg class="spark ${cls}" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c1 7 5 11 12 12-7 1-11 5-12 12-1-7-5-11-12-12 7-1 11-5 12-12z"/></svg>`;
 const hero = (dots, size) => `<canvas class="globe" data-dots="${dots}" data-size="${size}"></canvas>
   <img class="geos" src="assets-src/geos-hd.png" alt="">${passport()}${ticket()}${spark("s1")}${spark("s2")}${spark("s3")}`;
-const lede = `ร่วมกิจกรรมภูมิศาสตร์และภูมิสารสนเทศ<br>สะสม<b>ตราน้องจีออส</b>ให้ครบ แล้วลุ้น<b>ของรางวัล</b>สุดพิเศษ!`;
+const lede = `ร่วมกิจกรรมภูมิศาสตร์และภูมิสารสนเทศ<br>สะสม<b>ตราน้องจีออส</b>ให้ครบ แล้วลุ้น<br><b>เครื่องใช้ไฟฟ้า</b>และของรางวัลอีกมากมาย!`;
 
 const pages = {
   a4: `<div class="poster a4">${sky}${hero(5200, 0.3)}${head()}
     <div class="kick"><i></i>GEO PASSPORT · STAMP RALLY</div>${title}<p class="lede">${lede}</p>${where}
     <div class="steps">${stepsHTML}</div>
-    <div class="duo"><div class="prizes"><h2><small>PRIZES</small>ของรางวัลรอคุณอยู่!</h2><div class="pzs">${prizes}</div></div>${qrBlock()}</div>
+    <div class="duo">${prizeBox()}${qrBlock()}</div>
     <div class="bottom">
       <div class="partners"><h3>${B.length} บูธกิจกรรมจากหน่วยงานชั้นนำ</h3><div class="chips">${B.map((b) => `<span><em>${String(b.no).padStart(2, "0")}</em>${b.th}</span>`).join("")}</div></div>
       <div class="foot">${EVENT.title}</div></div></div>`,
   soc: `<div class="poster soc">${sky}${hero(4600, 0.3)}${head()}
     <div class="kick"><i></i>GEO PASSPORT · STAMP RALLY</div>${title}<p class="lede">${lede}</p>${where}
-    <div class="row"><div class="prizes"><h2><small>PRIZES</small>ของรางวัล</h2><div class="pzs">${prizes}</div></div>${qrBlock()}</div></div>`,
+    <div class="row">${prizeBox()}${qrBlock()}</div></div>`,
   sto: `<div class="poster sto">${sky}${hero(5000, 0.3)}${head()}
     <div class="kick"><i></i>GEO PASSPORT · STAMP RALLY</div>${title}${where}
-    <div class="tagline">ตะลุย <em>${B.length} บูธ</em> สะสมตราน้องจีออส<br>ครบแล้วรับ<em>ตั๋วลุ้นรางวัล</em>!</div>${qrBlock()}</div>`,
+    ${prizeBox("wide")}${qrBlock()}</div>`,
 };
 
 const doc = (inner, w, h) => `<!doctype html><html lang="th"><head><meta charset="utf-8"><base href="${pathToFileURL(root).href}">

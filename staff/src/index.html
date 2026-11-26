@@ -23,7 +23,7 @@
     <img class="login-logo" src="assets/logo-full.webp" alt="TGGC 2026" width="480" height="328">
     <span class="badge">STAFF · เจ้าหน้าที่</span>
     <h1>ระบบเจ้าหน้าที่บูธ</h1>
-    <p>แสดง QR รับตรา · สแกนสมุด · จุดลุ้นรางวัล</p>
+    <p>แสดง QR รับตรา · สแกนสมุด · เคาน์เตอร์แลกรางวัล</p>
     <label class="field"><span>ชื่อเจ้าหน้าที่</span><input class="input" id="lgName" maxlength="40" placeholder="เช่น ครูสมชาย" autocomplete="nickname" required></label>
     <label class="field"><span>PIN</span><input class="input pin" id="lgPin" type="password" inputmode="numeric" maxlength="12" placeholder="••••••" required></label>
     <p class="err" id="lgErr" hidden></p>
@@ -40,10 +40,10 @@
     <button class="icon-btn" id="logoutBtn" type="button" aria-label="ออกจากระบบ">${logout}</button>
   </header>
   <div class="wrap">
-    <a class="admin-card" href="#/admin" id="adminCard" hidden><span>${sparkle}</span><div><b>แดชบอร์ดแอดมิน</b><small>ภาพรวม · ของรางวัล · โอกาสได้รางวัล · ส่งออก CSV</small></div>${arrow}</a>
+    <a class="admin-card" href="#/admin" id="adminCard" hidden><span>${sparkle}</span><div><b>แดชบอร์ดแอดมิน</b><small>ภาพรวม · รายชื่อผู้ยื่นตั๋ว (ตรวจชื่อจับฉลาก) · ส่งออก CSV</small></div>${arrow}</a>
     <h2 class="sub">บูธกิจกรรม</h2>
     <div class="stations" id="stations"></div>
-    <h2 class="sub">จุดลุ้นรางวัล</h2>
+    <h2 class="sub">เคาน์เตอร์แลกรางวัล</h2>
     <div class="stations" id="prizeStation"></div>
     <a class="lookup-link" href="#/lookup">${search}<span>ตรวจสอบสมุดผู้เข้าร่วม (สแกน/ค้นหารหัส)</span></a>
     <p class="note">เคล็ดลับ: เปิดหน้าจอบูธค้างไว้ ระบบจะสร้าง QR ใหม่ทุก 30 วินาทีแม้ไม่มีอินเทอร์เน็ต · เปิด "เต็มจอ" แล้วตั้งมือถือ/แท็บเล็ตให้ผู้เข้าร่วมสแกน</p>
@@ -71,7 +71,7 @@
     <div class="tk-scan" id="tkScan" hidden>
       <button class="tk-big" type="button" id="tkScanBtn"><span class="tk-ring">${camera}</span><b>สแกนตั๋วลุ้นรางวัล</b><small>QR บนตั๋วในมือถือผู้เข้าร่วม</small></button>
       <form class="search" id="tkForm"><input class="input" id="tkId" maxlength="20" placeholder="หรือพิมพ์รหัสบนตั๋ว เช่น G7K2M9Q" autocapitalize="characters" autocomplete="off"><button class="btn" type="submit">ตรวจ</button></form>
-      <p class="how">ระบบตรวจว่าสะสมครบหรือไม่ · 1 ตั๋วลุ้นได้ 1 ครั้ง · ผลขึ้นที่มือถือผู้เข้าร่วมพร้อมกัน</p>
+      <p class="how">ระบบตรวจว่าสะสมครบหรือไม่ · 1 ตั๋วใช้ได้ 1 ครั้ง · ผ่านแล้วให้ผู้เข้าร่วมเขียนชื่อลงใบจับฉลาก หย่อนกล่อง</p>
     </div>
     <aside class="st-side">
       <div class="count-card"><span id="countLab">ให้ตราไปแล้ว</span><b id="countNum">–</b><small id="countSub">คน</small></div>
@@ -105,22 +105,15 @@
   <div class="wrap wide-wrap">
     <div class="kpis" id="kpis"></div>
     <div class="panel"><h3>ตราที่ให้แต่ละบูธ</h3><div class="bars" id="boothBars"></div></div>
-    <div class="panel"><h3>ของรางวัล <small>แก้จำนวนแล้วกดบันทึก</small></h3>
-      <div class="prize-table" id="prizeTable"></div>
-      <div class="row"><button class="btn ghost" type="button" id="addPrize">+ เพิ่ม</button><button class="btn" type="button" id="savePrizes">บันทึก</button></div>
-    </div>
-    <div class="panel"><h3>โอกาสได้รางวัล</h3>
-      <div class="settings">
-        <label class="field"><span>อัตราได้รางวัล (%)</span><input class="input" id="setRate" type="number" min="0" max="100" step="1"></label>
-        <label class="field"><span>จำนวนผู้ลุ้นที่คาดไว้ (ไม่บังคับ)</span><input class="input" id="setExpected" type="number" min="0" step="1" placeholder="0 = ใช้อัตราด้านซ้าย"></label>
-      </div>
-      <p class="help">ถ้าใส่ <b>จำนวนผู้ลุ้นที่คาดไว้</b> ระบบจะปรับโอกาสอัตโนมัติ = ของที่เหลือ ÷ คนที่ยังไม่ได้ลุ้น เพื่อให้ของพอแจกจนจบงาน (ไม่หมดตั้งแต่ช่วงเช้า) · ถ้าเป็น 0 จะใช้อัตราคงที่ · ของหมดเมื่อไหร่ ทุกคนจะ "ไม่ได้รางวัล" อัตโนมัติ</p>
-      <button class="btn" type="button" id="saveSettings">บันทึกการตั้งค่า</button>
+    <div class="panel"><h3>รายชื่อผู้ยื่นตั๋ว <small>ใช้ตรวจชื่อที่จับได้จากกล่อง ว่ายื่นตั๋วจริง</small></h3>
+      <form class="search" id="rdForm"><input class="input" id="rdQ" placeholder="ค้นชื่อ / โรงเรียน / รหัส" autocomplete="off"><button class="btn" type="submit">${search}</button></form>
+      <p class="help" id="rdInfo"></p>
+      <div class="rd-list" id="rdList"></div>
     </div>
     <div class="panel"><h3>ข้อมูล <small>ไฟล์ CSV เปิดด้วย Excel หรือ Google Sheets ได้</small></h3>
       <div class="row"><button class="btn green" type="button" id="exportBtn">${download}<span>ดาวน์โหลด CSV</span></button></div>
       <details class="danger"><summary>ล้างข้อมูลทดสอบ (ก่อนเริ่มงานจริง)</summary>
-        <p>ลบสมุด ตรา และผลลุ้นทั้งหมด แล้วคืนจำนวนของรางวัลเป็นจำนวนเต็ม — ย้อนกลับไม่ได้ ดาวน์โหลด CSV เก็บไว้ก่อน</p>
+        <p>ลบสมุด ตรา และประวัติการยื่นตั๋วทั้งหมด — ย้อนกลับไม่ได้ ดาวน์โหลด CSV เก็บไว้ก่อน</p>
         <div class="row"><input class="input" id="resetTxt" placeholder="พิมพ์ RESET"><button class="btn red" type="button" id="resetBtn">ล้างข้อมูล</button></div>
       </details>
     </div>

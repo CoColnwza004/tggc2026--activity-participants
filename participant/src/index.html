@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>สะสมตรา ลุ้นรางวัล · TGGC 2569</title>
-<meta name="description" content="สมุดสะสมตราบูธกิจกรรม TGGC 2569 · ร่วมกิจกรรมครบทุกบูธ รับตราน้องจีออส แล้วไปลุ้นของรางวัล พร้อมสูจิบัตร กำหนดการ และผังงาน">
+<meta name="description" content="สมุดสะสมตราบูธกิจกรรม TGGC 2569 · ร่วมกิจกรรมครบทุกบูธ รับตราน้องจีออส แล้วนำตั๋วไปลุ้นเครื่องใช้ไฟฟ้าและของรางวัลอีกมากมาย พร้อมสูจิบัตร กำหนดการ และผังงาน">
 <meta name="theme-color" content="#042c4a">
 <meta property="og:title" content="ตะลุยบูธ สะสมตรา ลุ้นรางวัล · TGGC 2569">
-<meta property="og:description" content="ร่วมกิจกรรมครบทุกบูธ รับตราประทับน้องจีออส แล้วไปลุ้นของรางวัล · เสาร์ 28 พ.ย. 2569 โรงเรียนชลประทานวิทยา">
+<meta property="og:description" content="ร่วมกิจกรรมครบทุกบูธ รับตราประทับน้องจีออส แล้วลุ้นเครื่องใช้ไฟฟ้าและของรางวัลอีกมากมาย · เสาร์ 28 พ.ย. 2569 โรงเรียนชลประทานวิทยา">
 <meta property="og:image" content="assets/og.jpg">
 <meta property="og:type" content="website">
 <link rel="icon" type="image/png" href="assets/icon-192.png">
@@ -60,11 +60,13 @@
   <ol class="howto">
     <li><span class="hw-ico">1</span><div><b>เข้าร่วมกิจกรรมที่บูธ</b><small id="howBooths"></small></div></li>
     <li><span class="hw-ico">2</span><div><b>สแกน QR รับตราประทับ</b><small>QR บนจอของเจ้าหน้าที่บูธ เปลี่ยนทุก 30 วินาที</small></div></li>
-    <li><span class="hw-ico">3</span><div><b>ครบแล้วรับตั๋ว ไปลุ้นรางวัล!</b><small id="howPrize"></small></div></li>
+    <li><span class="hw-ico">3</span><div><b>ครบแล้วรับตั๋ว ไปแลกสิทธิ์ลุ้นรางวัล!</b><small id="howPrize"></small></div></li>
   </ol>
 
-  <div class="sec-title"><h2>ของรางวัลรอคุณอยู่</h2><span>ลุ้นได้ 1 ครั้ง / คน</span></div>
+  <div class="sec-title"><h2>ของรางวัลรอคุณอยู่</h2><span>1 คน / 1 สิทธิ์</span></div>
+  <p class="prize-head" id="prizeHead"></p>
   <div class="prize-rail" id="prizeRail"></div>
+  <p class="prize-note" id="prizeNote"></p>
 
   <div class="sec-title"><h2>บูธกิจกรรม</h2><a href="#/program/booths">ดูทั้งหมด →</a></div>
   <div class="booth-rail" id="boothRail"></div>
@@ -222,16 +224,6 @@
       <button class="btn" type="button" id="ceGo"><span>ดูสมุดสะสมตรา</span></button>
     </div>
   </div>
-</div>
-
-<!-- draw sequence -->
-<div class="drawfx" id="drawfx" role="dialog" aria-modal="true" aria-label="ลุ้นรางวัล" hidden>
-  <div class="dx-bg" aria-hidden="true"><i class="stars"></i><i class="stars s2"></i></div>
-  <canvas class="dx-globe" id="dxGlobe" aria-hidden="true"></canvas>
-  <div class="dx-beams" aria-hidden="true"></div>
-  <div class="dx-slot"><span id="dxSlot">กำลังลุ้น…</span></div>
-  <div class="dx-flash" aria-hidden="true"></div>
-  <div class="dx-result" id="dxResult" hidden></div>
 </div>
 
 <!-- full-screen map viewer -->

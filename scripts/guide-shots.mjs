@@ -1,7 +1,9 @@
 // Phone screenshots for the how-to signs (scripts/make-guide.mjs).
 // Participant screens come from the local build in demo mode (no real data touched);
-// staff screens come from the staff site (login only, nothing is written) with the live QR blurred.
-// Usage: npm run build && node scripts/guide-shots.mjs [staffUrl] [staffPin]
+// staff screens come from the staff site with the live QR blurred. Nothing is written unless TICKET_ID is set:
+// then that passport's ticket is opened at the prize counter and redeemed — use a local `wrangler dev` staff URL for that.
+// Usage: npm run build && STAFF_PIN=… node scripts/guide-shots.mjs [staffUrl] [staffPin]
+//        TICKET_ID=G…… STAFF_PIN=… node scripts/guide-shots.mjs http://localhost:8802/
 import { createServer } from "node:http";
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join, extname } from "node:path";
@@ -49,6 +51,12 @@ if (staffPin) {
   await s.goto(staffUrl + "#/s/prize"); await wait(s, 2000);
   await s.addStyleTag({ content: "#countNum{visibility:hidden}" });
   await s.screenshot({ path: out + "s-prize.png" });
+  if (process.env.TICKET_ID) {
+    await s.fill("#tkId", process.env.TICKET_ID); await s.click("#tkForm button"); await wait(s, 1500);
+    await s.screenshot({ path: out + "s-ticket.png" });
+    await s.click("[data-redeem]"); await wait(s, 1800);
+    await s.screenshot({ path: out + "s-slip.png" });
+  }
   console.log("staff shots ok");
 } else console.log("no STAFF_PIN: staff shots skipped");
 
@@ -98,11 +106,11 @@ await p.screenshot({ path: out + "p-join.png" });
 await p.click("#joinBtn");
 await wait(p, 1500);
 
-const setStamps = (n, draw = null) => p.evaluate(([n, ids, draw]) => {
+const setStamps = (n, redeem = null) => p.evaluate(([n, ids, redeem]) => {
   const D = JSON.parse(localStorage.getItem("tggc-demo-db"));
   D.stamps = {}; ids.slice(0, n).forEach((id, i) => (D.stamps[id] = Date.now() - (n - i) * 60e3));
-  D.draw = draw; localStorage.setItem("tggc-demo-db", JSON.stringify(D));
-}, [n, EVENT.booths.map((x) => x.id), draw]);
+  D.redeem = redeem; localStorage.setItem("tggc-demo-db", JSON.stringify(D));
+}, [n, EVENT.booths.map((x) => x.id), redeem]);
 
 // scanner → manual code → celebration
 await setStamps(6);
@@ -124,10 +132,9 @@ await setStamps(EVENT.booths.length);
 await p.goto(base + "#/prize"); await p.reload({ waitUntil: "networkidle" }); await hideDemo(p); await wait(p, 1500);
 await p.screenshot({ path: out + "p-ticket.png" });
 
-// drawn by staff → result on the phone
-const prize = EVENT.prizes[0];
-await setStamps(EVENT.booths.length, { win: true, prize: { id: prize.id, name: prize.name, art: prize.art }, at: Date.now(), claimed: null });
-await p.reload({ waitUntil: "networkidle" }); await hideDemo(p); await wait(p, 6000);
+// ticket scanned at the counter → next steps on the phone
+await setStamps(EVENT.booths.length, { at: Date.now(), by: "ครูสมชาย" });
+await p.reload({ waitUntil: "networkidle" }); await hideDemo(p); await wait(p, 3500);
 await p.screenshot({ path: out + "p-result.png" });
 await ctx.close();
 
