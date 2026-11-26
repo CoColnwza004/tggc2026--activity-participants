@@ -5,6 +5,7 @@ import { icon, prizeArt } from "../../shared/web/icons.js";
 import { burst, fireworks, drift, sfx, sound, buzz } from "../../shared/web/fx.js";
 import { createGlobe } from "./globe.js";
 import { stampHTML, finalSealHTML } from "./stamps.js";
+import { boothMapSVG, schoolMapSVG } from "./maps.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -350,22 +351,66 @@ function renderTimeline() {
 
 function renderMap() {
   const M = EVENT.maps;
-  const dots = B.map((b) => `<button type="button" class="mdot ${S.stamps[b.id] ? "got" : ""}" data-booth="${b.id}" data-dot="${b.id}" style="left:${b.mx}%;top:${b.my}%;--c:${b.color}" aria-label="บูธ ${b.no} ${esc(b.th)}"></button>`).join("");
+  const n = B.filter((b) => S.stamps[b.id]).length;
   $("#mapCard").innerHTML = `
-    <figure class="map-fig"><figcaption><b>${esc(M.booths.title)}</b><a href="${M.booths.image}" target="_blank" rel="noopener">ขยาย ↗</a></figcaption>
-      <div class="map-img"><img src="${M.booths.image}" width="${M.booths.w}" height="${M.booths.h}" alt="ผังบูธกิจกรรม" loading="lazy" decoding="async">${dots}</div>
-      <p class="map-note"><i class="mdot got sample"></i>วงสีเขียว = ได้ตราแล้ว · แตะชื่อบูธด้านล่างเพื่อชี้ตำแหน่งบนผัง</p></figure>`;
+    <figure class="map-fig"><figcaption><b>${esc(M.booths.title)}</b><button type="button" class="mv-open" data-mapview="booths">${icon("expand")}เต็มจอ</button></figcaption>
+      <div class="map-svg" data-mapview="booths" title="แตะเพื่อขยาย">${boothMapSVG(S.stamps)}</div>
+      <p class="map-note"><i class="pin-sample"></i>สีเขียว = ได้ตราแล้ว (${n}/${B.length}) · แตะผังเพื่อขยาย · แตะชื่อบูธด้านล่างเพื่อชี้ตำแหน่ง</p></figure>`;
   $("#mapLegend").innerHTML = B.map((b) => `<li><button type="button" data-booth="${b.id}" style="--c:${b.color}"><span class="n">${b.no}</span><span><b>${esc(b.th)}</b><small>${esc(b.place)}</small></span>${S.stamps[b.id] ? `<span class="ok">${icon("check")}</span>` : ""}</button></li>`).join("") +
     `<li><button type="button" data-booth="${EVENT.prizePoint.id}" style="--c:#c9971c"><span class="n">★</span><span><b>${esc(EVENT.prizePoint.th)}</b><small>${esc(EVENT.prizePoint.place)}</small></span></button></li>`;
-  $("#schoolMap").innerHTML = `<figure class="map-fig"><figcaption><b>${esc(M.school.title)}</b><a href="${M.school.image}" target="_blank" rel="noopener">ขยาย ↗</a></figcaption>
-      <a class="map-img" href="${M.school.image}" target="_blank" rel="noopener"><img src="${M.school.image}" width="${M.school.w}" height="${M.school.h}" alt="แผนผังการจัดงาน" loading="lazy" decoding="async"></a></figure>
-    <ol class="places">${EVENT.places.map((p) => `<li><span class="pn">${p.no}</span><div><b>${esc(p.name)}</b>${p.lines.map((l) => `<small>• ${esc(l)}</small>`).join("")}</div></li>`).join("")}</ol>`;
+  $("#schoolMap").innerHTML = `<figure class="map-fig"><figcaption><b>${esc(M.school.title)}</b><button type="button" class="mv-open" data-mapview="school">${icon("expand")}เต็มจอ</button></figcaption>
+      <div class="map-svg" data-mapview="school" title="แตะเพื่อขยาย">${schoolMapSVG()}</div></figure>
+    <ol class="places">${EVENT.places.map((p) => `<li><button type="button" data-place-focus="${p.no}"><span class="pn"><i>${p.no}</i></span><div><b>${esc(p.name)}</b>${p.lines.map((l) => `<small>• ${esc(l)}</small>`).join("")}</div></button></li>`).join("")}</ol>`;
 }
-function focusBooth(id) {
-  const d = $(`[data-dot="${id}"]`);
+
+// full-screen viewer: the map drawn large inside a scroll box; + / − change its width around the current centre
+let mvZoom = 1;
+function openMapView(kind) {
+  const school = kind === "school";
+  $("#mvTitle").textContent = school ? EVENT.maps.school.title : EVENT.maps.booths.title;
+  $("#mvInner").innerHTML = school ? schoolMapSVG() : boothMapSVG(S.stamps);
+  $("#mvHint").textContent = school ? "เลื่อนเพื่อดูผัง · ใช้ปุ่ม + − ซูม" : "แตะหมายเลขบูธเพื่อดูรายละเอียด · ใช้ปุ่ม + − ซูม";
+  $("#mapView").hidden = false;
+  document.documentElement.classList.add("lock");
+  const sc = $("#mvScroll"), r = school ? 1045 / 575 : 1000 / 790;
+  mvZoom = Math.min(2.5, Math.max(1, (sc.clientHeight * r) / sc.clientWidth)); // portrait phone: fill the height; "−" shows the whole plan
+  mvLayout(school ? 0.62 : 0.28, school ? 0.4 : 0.42);
+}
+function mvLayout(fx, fy) {
+  const sc = $("#mvScroll"), svg = $("#mvInner svg");
+  if (!svg) return;
+  const vb = svg.viewBox.baseVal, ratio = vb.width / vb.height;
+  const fit = Math.min(sc.clientWidth, sc.clientHeight * ratio); // zoom 1 = whole plan on screen
+  const w = Math.round(fit * mvZoom);
+  $("#mvInner").style.width = w + "px";
+  $("#mvInner").style.marginTop = Math.max(0, (sc.clientHeight - w / ratio) / 2) + "px";
+  sc.scrollLeft = fx * w - sc.clientWidth / 2;
+  sc.scrollTop = fy * (w / ratio) - sc.clientHeight / 2;
+  $("#mvOut").disabled = mvZoom <= 1; $("#mvIn").disabled = mvZoom >= 4;
+}
+function mvZoomBy(k) {
+  const sc = $("#mvScroll"), inner = $("#mvInner");
+  const fx = (sc.scrollLeft + sc.clientWidth / 2) / inner.offsetWidth, fy = (sc.scrollTop + sc.clientHeight / 2) / inner.offsetHeight;
+  mvZoom = Math.min(4, Math.max(1, mvZoom * k));
+  mvLayout(fx, fy);
+}
+function closeMapView() { $("#mapView").hidden = true; document.documentElement.classList.remove("lock"); $("#mvInner").innerHTML = ""; }
+$("#mvClose").onclick = closeMapView;
+$("#mvIn").onclick = () => mvZoomBy(1.5);
+$("#mvOut").onclick = () => mvZoomBy(1 / 1.5);
+addEventListener("resize", () => { if (!$("#mapView").hidden) mvLayout(0.5, 0.5); });
+
+function focusPlace(no) {
+  const d = $(`#schoolMap [data-place="${no}"]`);
   if (!d) return;
   d.scrollIntoView({ behavior: "smooth", block: "center" });
-  d.classList.remove("focus"); void d.offsetWidth; d.classList.add("focus");
+  d.classList.remove("focus"); void d.getBoundingClientRect(); d.classList.add("focus");
+}
+function focusBooth(id) {
+  const d = $(`#mapCard [data-dot="${id}"]`);
+  if (!d) return;
+  d.scrollIntoView({ behavior: "smooth", block: "center" });
+  d.classList.remove("focus"); void d.getBoundingClientRect(); d.classList.add("focus");
 }
 
 let progTab = "schedule";
@@ -642,6 +687,10 @@ document.addEventListener("click", (e) => {
   }
   const fo = e.target.closest("[data-focus]");
   if (fo) setTimeout(() => focusBooth(fo.dataset.focus), 450);
+  const mv = e.target.closest("[data-mapview]");
+  if (mv) { e.preventDefault(); openMapView(mv.dataset.mapview); return; }
+  const pf = e.target.closest("[data-place-focus]");
+  if (pf) { focusPlace(pf.dataset.placeFocus); return; }
   const bt = e.target.closest("[data-booth]");
   if (bt) {
     e.preventDefault();
@@ -658,6 +707,7 @@ addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (!$("#scanner").hidden) closeScanner();
   else if (!$("#sheet").hidden) closeSheet();
+  else if (!$("#mapView").hidden) closeMapView();
   else if (!$("#celebrate").hidden) $("#celebrate").hidden = true;
 });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { sync(); flush(); renderNow(); } });

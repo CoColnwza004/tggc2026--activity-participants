@@ -12,7 +12,7 @@ const C = ["#075f98", "#0a98c7", "#15a8a0", "#148e64", "#5ba1a5", "#2cc394"];
 const HALL_SIDE = "ข้างหอประชุมชูชาติ กำภู 60 ปี (ฝั่งอาคาร 8)";
 const HALL_IN = "หอประชุมชูชาติ กำภู 60 ปี ชั้น 1";
 const B8 = "ข้างอาคาร 8";
-const booth = (no, th, en, icon, place, mx, my) => ({ id: "b" + no, no, th, en, name: en, icon, place, mx, my, color: C[(no - 1) % C.length], desc: "" });
+const booth = (no, th, en, icon, place) => ({ id: "b" + no, no, th, en, name: en, icon, place, color: C[(no - 1) % C.length], desc: "" });
 
 export const EVENT = {
   short: "TGGC 2026",
@@ -30,30 +30,30 @@ export const EVENT = {
   participantUrl: "https://tggc2569-activity.ktxcdd.workers.dev/",
 
   booths: [
-    booth(1, "มหาวิทยาลัยศิลปากร", "SILPAKORN UNIVERSITY", "uni", HALL_SIDE, 19.6, 53.0),
-    booth(2, "มหาวิทยาลัยเกษตรศาสตร์", "KASETSART UNIVERSITY", "uni", HALL_SIDE, 19.6, 50.7),
-    booth(3, "จุฬาลงกรณ์มหาวิทยาลัย และสมาคมภูมิศาสตร์แห่งประเทศไทย", "CHULALONGKORN × TGA", "globe", HALL_SIDE, 19.6, 48.4),
-    booth(4, "กรมป่าไม้", "ROYAL FOREST DEPT.", "leaf", HALL_SIDE, 19.6, 46.1),
-    booth(5, "สถาบันการบินพลเรือน", "CIVIL AVIATION TRAINING", "plane", HALL_SIDE, 19.6, 43.8),
-    booth(6, "วิทยาลัยชลประทาน กรมชลประทาน", "IRRIGATION COLLEGE", "drop", HALL_SIDE, 19.6, 41.5),
-    booth(7, "หลักสูตรชลศึกษา ชปว.", "CHONLASUKSA · CPW", "drop", HALL_SIDE, 19.6, 39.1),
-    booth(8, "มหาวิทยาลัยกรุงเทพ", "BANGKOK UNIVERSITY", "uni", HALL_SIDE, 19.6, 36.7),
-    booth(9, "มหาวิทยาลัยธุรกิจบัณฑิตย์", "DHURAKIJ PUNDIT UNIV.", "uni", HALL_SIDE, 19.6, 34.3),
-    booth(10, "มหาวิทยาลัยศรีปทุม", "SRIPATUM UNIVERSITY", "uni", HALL_SIDE, 19.6, 31.9),
-    booth(11, "สถาบันเทคโนโลยีไทย-ญี่ปุ่น", "THAI-NICHI INSTITUTE", "uni", HALL_SIDE, 19.6, 29.3),
-    booth(12, "มหาวิทยาลัยเกริก", "KRIRK UNIVERSITY", "uni", HALL_SIDE, 19.6, 26.9),
-    booth(13, "มหาวิทยาลัยเซาธ์อีสท์บางกอก", "SOUTHEAST BANGKOK UNIV.", "uni", HALL_SIDE, 19.6, 24.5),
-    booth(14, "มหาวิทยาลัยคริสเตียน", "CHRISTIAN UNIVERSITY", "uni", HALL_SIDE, 19.6, 21.9),
-    booth(15, "สำนักงานพัฒนาเทคโนโลยีอวกาศและภูมิสารสนเทศ", "GISTDA", "satellite", HALL_IN, 31.4, 41.9),
-    booth(16, "บริษัท อีเอสอาร์ไอ (ประเทศไทย)", "ESRI THAILAND", "map", HALL_IN, 49.4, 41.9),
-    booth(17, "มหาวิทยาลัยศรีนครินทรวิโรฒ", "SRINAKHARINWIROT UNIV.", "uni", B8, 12.0, 48.4),
-    booth(18, "มหาวิทยาลัยราชภัฏสวนสุนันทา", "SUAN SUNANDHA RAJABHAT", "uni", B8, 12.0, 46.1),
-    booth(19, "มหาวิทยาลัยราชภัฏนครปฐม", "NAKHON PATHOM RAJABHAT", "uni", B8, 12.0, 43.7),
-    booth(20, "โรงเรียนแผนที่ทหาร", "MILITARY MAPPING SCHOOL", "compass", B8, 12.0, 37.0),
-    booth(21, "มูลนิธิสถาบันสิ่งแวดล้อมไทย", "THAILAND ENVIRONMENT INST.", "leaf", B8, 12.0, 34.5),
-    booth(22, "สำนักนโยบายและแผนทรัพยากรธรรมชาติและสิ่งแวดล้อม", "ONEP", "mountain", B8, 12.0, 32.1),
+    booth(1, "มหาวิทยาลัยศิลปากร", "SILPAKORN UNIVERSITY", "uni", HALL_SIDE),
+    booth(2, "มหาวิทยาลัยเกษตรศาสตร์", "KASETSART UNIVERSITY", "uni", HALL_SIDE),
+    booth(3, "จุฬาลงกรณ์มหาวิทยาลัย และสมาคมภูมิศาสตร์แห่งประเทศไทย", "CHULALONGKORN × TGA", "globe", HALL_SIDE),
+    booth(4, "กรมป่าไม้", "ROYAL FOREST DEPT.", "leaf", HALL_SIDE),
+    booth(5, "สถาบันการบินพลเรือน", "CIVIL AVIATION TRAINING", "plane", HALL_SIDE),
+    booth(6, "วิทยาลัยชลประทาน กรมชลประทาน", "IRRIGATION COLLEGE", "drop", HALL_SIDE),
+    booth(7, "หลักสูตรชลศึกษา ชปว.", "CHONLASUKSA · CPW", "drop", HALL_SIDE),
+    booth(8, "มหาวิทยาลัยกรุงเทพ", "BANGKOK UNIVERSITY", "uni", HALL_SIDE),
+    booth(9, "มหาวิทยาลัยธุรกิจบัณฑิตย์", "DHURAKIJ PUNDIT UNIV.", "uni", HALL_SIDE),
+    booth(10, "มหาวิทยาลัยศรีปทุม", "SRIPATUM UNIVERSITY", "uni", HALL_SIDE),
+    booth(11, "สถาบันเทคโนโลยีไทย-ญี่ปุ่น", "THAI-NICHI INSTITUTE", "uni", HALL_SIDE),
+    booth(12, "มหาวิทยาลัยเกริก", "KRIRK UNIVERSITY", "uni", HALL_SIDE),
+    booth(13, "มหาวิทยาลัยเซาธ์อีสท์บางกอก", "SOUTHEAST BANGKOK UNIV.", "uni", HALL_SIDE),
+    booth(14, "มหาวิทยาลัยคริสเตียน", "CHRISTIAN UNIVERSITY", "uni", HALL_SIDE),
+    booth(15, "สำนักงานพัฒนาเทคโนโลยีอวกาศและภูมิสารสนเทศ", "GISTDA", "satellite", HALL_IN),
+    booth(16, "บริษัท อีเอสอาร์ไอ (ประเทศไทย)", "ESRI THAILAND", "map", HALL_IN),
+    booth(17, "มหาวิทยาลัยศรีนครินทรวิโรฒ", "SRINAKHARINWIROT UNIV.", "uni", B8),
+    booth(18, "มหาวิทยาลัยราชภัฏสวนสุนันทา", "SUAN SUNANDHA RAJABHAT", "uni", B8),
+    booth(19, "มหาวิทยาลัยราชภัฏนครปฐม", "NAKHON PATHOM RAJABHAT", "uni", B8),
+    booth(20, "โรงเรียนแผนที่ทหาร", "MILITARY MAPPING SCHOOL", "compass", B8),
+    booth(21, "มูลนิธิสถาบันสิ่งแวดล้อมไทย", "THAILAND ENVIRONMENT INST.", "leaf", B8),
+    booth(22, "สำนักนโยบายและแผนทรัพยากรธรรมชาติและสิ่งแวดล้อม", "ONEP", "mountain", B8),
     booth(23, "ศูนย์ดาราศาสตร์และท้องฟ้าจำลอง ชปว.", "CPW PLANETARIUM", "star",
-      "ศูนย์ดาราศาสตร์และท้องฟ้าจำลอง ชั้น 3 อาคารสันทนาการและกีฬา อาจารย์วิทยา สมาหาร", 96.7, 57.1),
+      "ศูนย์ดาราศาสตร์และท้องฟ้าจำลอง ชั้น 3 อาคารสันทนาการและกีฬา อาจารย์วิทยา สมาหาร"),
   ],
 
   // ต้องสะสมกี่ตราจึงลุ้นรางวัลได้ (ใส่ตัวเลขน้อยกว่าจำนวนบูธได้ เช่น 10)
@@ -83,8 +83,9 @@ export const EVENT = {
 
   // ผังงาน (รูปจริงจากสูจิบัตร)
   maps: {
-    booths: { image: "assets/map-booths.webp", w: 1290, h: 907, title: "ผังบูธกิจกรรม" },
-    school: { image: "assets/map-school.webp", w: 1191, h: 1684, title: "แผนผังการจัดงาน โรงเรียนชลประทานวิทยา" },
+    // วาดเป็น SVG ใน participant/src/maps.js (ตำแหน่งหมุดบูธ: BOOTH_XY ในไฟล์นั้น)
+    booths: { title: "ผังบูธกิจกรรม" },
+    school: { title: "แผนผังการจัดงาน โรงเรียนชลประทานวิทยา" },
   },
   // จุดสำคัญตามแผนผังการจัดงาน
   places: [
