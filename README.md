@@ -102,6 +102,7 @@ npx wrangler dev -c staff/wrangler.jsonc --persist-to .wrangler/state --port 878
 | `scripts/build.mjs` | build → `dist/participant`, `dist/staff` |
 | `poster/` | โปสเตอร์โปรโมท A4 (PNG 300 dpi + PDF), โพสต์ 4:5 และสตอรี่ 9:16 · สร้างใหม่ด้วย `node scripts/make-poster.mjs` · ป้ายวิธีใช้งาน `guide-participant` / `guide-staff` (A4 PNG + PDF) สร้างด้วย `node scripts/guide-shots.mjs` แล้ว `node scripts/make-guide.mjs` |
 | `poster/booths/` | **โปสเตอร์ QR ประจำบูธสำหรับเจ้าหน้าที่** 23 ใบ (A4 PDF 300 dpi แยกบูธ + `booth-posters-all.pdf` รวมทุกหน้า) ลายพื้นหลังไม่ซ้ำกันทุกบูธ · QR เปิดเว็บเจ้าหน้าที่ตรงจอบูธนั้น (`staffUrl#/s/<id>`) ใส่ PIN แล้วขึ้น QR รับตราทันที · QR บนโปสเตอร์ไม่ให้ตรา (กันถ่ายรูปแชร์) · สร้างใหม่ (ดึงชื่อ/โลโก้ที่แก้ในเว็บแอดมิน) ด้วย `node scripts/make-booth-posters.mjs` |
+| `scripts/make-admin-poster.mjs` | โปสเตอร์ A4 เว็บแอดมิน (QR + วิธีเข้าใช้) · รหัสผ่านไม่อยู่ใน repo: `ADMIN_PIN_PRINT=<รหัส> node scripts/make-admin-poster.mjs ไฟล์.pdf` (ไม่ใส่ = ช่องว่างให้เขียนเอง) · อย่า commit ไฟล์ที่มีรหัส |
 | `shared/web/patterns.js` | ลายพื้นหลังภูมิศาสตร์ 24 แบบ (เส้นชั้นความสูง, กริดแผนที่, วงโคจร ฯลฯ) ใช้กับโปสเตอร์บูธ จอบูธของเจ้าหน้าที่ และปกสมุด · ลายประจำบูธ: `BOOTH_PATTERN` |
 | `participant/src/covers.js` | ปกสมุดตรา 14 ลาย สุ่มให้ตามรหัสสมุด (คนเดิมได้ลายเดิมทุกเครื่อง) |
 | `vendor/` | qrcode-generator (MIT, Kazuhiko Arase), jsQR (Apache-2.0) |
