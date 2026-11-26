@@ -622,10 +622,15 @@ $("#ceGo").onclick = () => { $("#celebrate").hidden = true; location.hash = coun
 $("#ceMore").onclick = () => { $("#celebrate").hidden = true; openScanner(); };
 
 // ---------------------------------------------------------------- waiting at the prize counter
-let watchT = 0;
-function watchRedeem() {
+// every 5 s for the first 2 minutes on this page (the moment staff scan the ticket), then every 20 s,
+// and it stops after 15 minutes (any tap, or coming back to the app, starts it again) — keeps the request count low
+let watchT = 0, watchFrom = 0;
+function watchRedeem(restart = true) {
   clearTimeout(watchT);
   if (view !== "prize" || S.redeem || !S.pass || count() < TOTAL || DEMO) return;
+  if (restart) watchFrom = Date.now();
+  const age = Date.now() - watchFrom;
+  if (age > 15 * 60e3) return;
   watchT = setTimeout(async () => {
     if (!document.hidden && view === "prize" && !S.redeem) {
       try {
@@ -635,9 +640,12 @@ function watchRedeem() {
       } catch { /* keep waiting */ }
       if (S.redeem) { render(); return; }
     }
-    watchRedeem();
-  }, 3000);
+    watchRedeem(false);
+  }, age < 2 * 60e3 ? 5000 : 20000);
 }
+// back from another app / a tap on the page: check quickly again
+document.addEventListener("visibilitychange", () => { if (!document.hidden && view === "prize") watchRedeem(); });
+document.addEventListener("pointerdown", () => { if (view === "prize" && Date.now() - watchFrom > 2 * 60e3) watchRedeem(); }, { passive: true });
 
 // ---------------------------------------------------------------- my QR
 async function showMyQR() {
@@ -689,7 +697,9 @@ loadBooths(() => { fillStatic(); render(); }); // names/logos edited on the admi
 if (DEMO) $("#demoFlag").hidden = false;
 route();
 flush();
-sync(true);
+// opened from a booth QR (phone camera): the stamp reply carries the whole passport, so no separate fetch;
+// otherwise refresh unless it was done in the last 45 s (each fetch is a Worker request)
+if (!/[#&]s=/.test(location.hash)) sync();
 if ("serviceWorker" in navigator && !DEMO && location.protocol === "https:") {
   addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
 }

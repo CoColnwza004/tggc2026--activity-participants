@@ -1,11 +1,12 @@
 // Service worker: keeps the app usable when the venue Wi-Fi is overloaded.
-// - pages: network first (3 s timeout), then the cached copy
+// - pages: from the cache if fetched < 10 min ago, else network first (3 s timeout), then the cached copy
 // - hashed files (/assets, /js, /vendor): cache first, they never change
 // - Google Fonts: stale-while-revalidate
 // - /api/*: never cached
 const VERSION = "__VERSION__";
 const PRECACHE = __PRECACHE__;
 const CACHE = "tggc-act-" + VERSION;
+const FRESH = 10 * 60e3;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
@@ -29,11 +30,21 @@ self.addEventListener("fetch", (e) => {
   if (url.origin === location.origin) {
     if (url.pathname.startsWith("/api/")) return;
     if (req.mode === "navigate") {
+      // the booth QR opens the site from the phone camera at every booth: if the page was fetched in the last
+      // 10 minutes, open it straight from the cache (instant, and no request to the server); otherwise network
+      // first (3 s timeout), then the cached copy
       e.respondWith(
-        timeout(3000, fetch(req)).then((r) => {
-          if (r.ok) { const copy = r.clone(); caches.open(CACHE).then((c) => c.put("/", copy)); }
-          return r;
-        }).catch(() => caches.match("/").then((r) => r || fetch(req)))
+        caches.open(CACHE).then(async (c) => {
+          const hit = await c.match("/");
+          if (hit && Date.now() - (+hit.headers.get("x-sw-at") || 0) < FRESH) return hit;
+          return timeout(3000, fetch(req)).then(async (r) => {
+            if (r.ok && r.type === "basic") {
+              const h = new Headers(r.headers); h.set("x-sw-at", String(Date.now()));
+              c.put("/", new Response(await r.clone().blob(), { status: r.status, headers: h }));
+            }
+            return r;
+          }).catch(() => hit || fetch(req));
+        })
       );
       return;
     }
