@@ -90,6 +90,7 @@ npx wrangler dev -c staff/wrangler.jsonc --persist-to .wrangler/state --port 878
 | `shared/web/` | ไอคอน, สร้าง QR, สแกนกล้อง, เอฟเฟกต์ (คอนเฟตตี เสียง สั่น) |
 | `assets/` | รูปที่ใช้จริง (สร้างจาก `assets-src/` ด้วย `scripts/make-assets.py`, `scripts/make-og.mjs`) |
 | `scripts/build.mjs` | build → `dist/participant`, `dist/staff` |
+| `poster/` | โปสเตอร์โปรโมท A4 (PNG 300 dpi + PDF), โพสต์ 4:5 และสตอรี่ 9:16 · สร้างใหม่ด้วย `node scripts/make-poster.mjs` |
 | `vendor/` | qrcode-generator (MIT, Kazuhiko Arase), jsQR (Apache-2.0) |
 
 ข้อมูลแผนที่โลก: world-atlas (Natural Earth, ISC/public domain)

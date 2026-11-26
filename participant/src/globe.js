@@ -103,12 +103,14 @@ export function createGlobe(canvas, opt = {}) {
         ctx.globalAlpha = 0.35 + 0.65 * z;
         ctx.fillStyle = z > 0.55 ? "#5ff0bf" : "#2cc394";
         const s = base * (1.5 + 1.1 * z);
-        ctx.fillRect(sx - s / 2, sy - s / 2, s, s);
+        if (o.round) { ctx.beginPath(); ctx.arc(sx, sy, s / 2, 0, 7); ctx.fill(); } // print: round dots
+        else ctx.fillRect(sx - s / 2, sy - s / 2, s, s);
       } else {
         ctx.globalAlpha = 0.12 + 0.3 * z;
         ctx.fillStyle = "#a7d5db";
         const s = base * 0.9;
-        ctx.fillRect(sx - s / 2, sy - s / 2, s, s);
+        if (o.round) { ctx.beginPath(); ctx.arc(sx, sy, s / 2, 0, 7); ctx.fill(); }
+        else ctx.fillRect(sx - s / 2, sy - s / 2, s, s);
       }
     }
     ctx.globalAlpha = 1;
