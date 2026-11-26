@@ -528,9 +528,23 @@ a { color: var(--sea); }
 .timeline .ev .pl .ico { width: 14px; height: 14px; margin-top: 2px; }
 .timeline .tag { display: inline-block; margin-bottom: 4px; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background: color-mix(in srgb, var(--c) 14%, #fff); color: var(--c); }
 .timeline li.now .ev { border-color: var(--mint); box-shadow: 0 0 0 3px rgba(44, 195, 148, .2), var(--shadow); }
-.timeline li.now .dot { background: var(--mint); border-color: #fff; box-shadow: 0 0 0 3px var(--mint); animation: pulse 1.6s infinite; }
+/* happening now: a glowing sky-blue → green dot with ripples on the timeline */
+.timeline li.now .dot {
+  left: 58px; top: 15px; width: 18px; height: 18px; z-index: 1; border: 3px solid #fff;
+  background: radial-gradient(circle at 35% 30%, #9ff3ff 0, #0a98c7 45%, #2cc394 100%);
+  box-shadow: 0 0 0 2px rgba(10, 152, 199, .35), 0 0 14px 3px rgba(44, 195, 148, .55), 0 0 26px 6px rgba(10, 152, 199, .35);
+  animation: nowGlow 2.4s ease-in-out infinite;
+}
+.timeline li.now .dot::before, .timeline li.now .dot::after {
+  content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 2px solid var(--sea); animation: nowRing 2.4s ease-out infinite; pointer-events: none;
+}
+.timeline li.now .dot::after { border-color: var(--mint); animation-delay: 1.2s; }
+@keyframes nowRing { from { transform: scale(1); opacity: .9; } to { transform: scale(2.2); opacity: 0; } }
+@keyframes nowGlow { 50% { filter: brightness(1.15) saturate(1.2); box-shadow: 0 0 0 2px rgba(44, 195, 148, .45), 0 0 20px 5px rgba(10, 152, 199, .6), 0 0 34px 9px rgba(44, 195, 148, .35); } }
+.timeline li.now::before { content: ""; position: absolute; left: 66px; top: 8px; bottom: 0; width: 2px; background: linear-gradient(var(--sea), var(--mint)); border-radius: 2px; }
 .timeline li.past { opacity: .55; }
 .timeline .live { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; font-size: 11.5px; font-weight: 700; color: var(--green); }
+.timeline .live .live-dot { background: linear-gradient(135deg, var(--sea), var(--mint)); }
 
 .map-card { position: relative; border-radius: 24px; overflow: hidden; background: #eaf6ef; border: 1px solid var(--line); box-shadow: var(--shadow); }
 .map-card svg { display: block; width: 100%; height: auto; }

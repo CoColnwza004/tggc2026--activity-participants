@@ -326,8 +326,13 @@ function redeemedHTML(r) {
     <div class="who"><b>${esc(p.name)}</b>${esc(p.school || "")}<br><code>${esc(p.id)}</code></div></div>`;
 }
 
-function renderTimeline() {
+let tlSig = "";
+function renderTimeline(onlyIfChanged = false) {
   const now = Date.now();
+  // the "happening now" dot moves on by itself: re-render only when an item starts or ends
+  const sig = EVENT.schedule.map((s) => (now >= at(s.e) ? "p" : now >= at(s.t) ? "n" : "f")).join("");
+  if (onlyIfChanged && sig === tlSig) return;
+  tlSig = sig;
   const color = { reg: "#0a98c7", stage: "#075f98", main: "#148e64", booth: "#15a8a0", break: "#86a4b1" };
   const label = { reg: "ลงทะเบียน", stage: "พิธีการ", main: "การแข่งขัน", booth: "กิจกรรม", break: "พัก" };
   $("#timeline").innerHTML = EVENT.schedule.map((s) => {
@@ -403,6 +408,7 @@ function focusBooth(id) {
 }
 
 let progTab = "schedule";
+setInterval(() => { if (view === "program" && progTab === "schedule" && !document.hidden) renderTimeline(true); }, 20000);
 function renderProgram(tab) {
   progTab = tab;
   $$("#progTabs a").forEach((a) => a.setAttribute("aria-selected", String(a.dataset.tab === tab)));
