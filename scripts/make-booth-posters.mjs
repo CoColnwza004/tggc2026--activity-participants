@@ -5,13 +5,15 @@
 //   poster/booths/booth-01.pdf … booth-23.pdf   A4, flattened 300 dpi (prints the same everywhere)
 //   poster/booths/booth-posters-all.pdf         all 23 pages in one file (for the print shop)
 //   poster/booths/preview.png                   contact sheet
+//   poster/booths/prize-counter.pdf             the prize counter (ticket check) poster, same idea, gold
+// Only the prize counter: node scripts/make-booth-posters.mjs prize
 // Names and logos come from the live site (admin edits), falling back to shared/event.js.
 // Usage: node scripts/make-booth-posters.mjs [booth no …]
 import { mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { EVENT } from "../shared/event.js";
-import { stampHTML } from "../participant/src/stamps.js";
+import { EVENT, REQUIRED } from "../shared/event.js";
+import { stampHTML, finalSealHTML } from "../participant/src/stamps.js";
 import { icon } from "../shared/web/icons.js";
 import { qrSvg } from "../shared/web/qr.js";
 import { applyBooths } from "../shared/web/booths.js";
@@ -26,6 +28,7 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const out = root + "poster/booths/";
 mkdirSync(out, { recursive: true });
 const only = process.argv.slice(2).map(Number).filter(Boolean);
+const prizeOnly = process.argv.slice(2).includes("prize");
 
 // live booth names/logos (curl: goes through the proxy when there is one)
 const curl = (url, bin = false) => execFileSync("curl", ["-sfL", "--max-time", "20", url], { encoding: bin ? "buffer" : "utf8", maxBuffer: 8e6 });
@@ -91,6 +94,15 @@ body{font-family:var(--f-body);color:#fff;-webkit-font-smoothing:antialiased}
 .note .seal{width:128px;height:128px;display:grid;place-items:center}
 .foot{display:flex;justify-content:space-between;gap:20px;margin-top:16px;font-size:16px;color:rgba(255,255,255,.75)}
 .foot b{font-family:var(--f-tech);letter-spacing:.12em}
+.steps.s4{grid-template-columns:repeat(4,1fr);gap:14px}
+.steps.s4 .step{grid-template-columns:1fr;gap:10px;padding:18px 16px;align-content:start}
+.prize .qr{width:500px;height:500px;margin-top:50px}
+.prize .mid{padding-top:30px}
+.steps.s4 .step b{font-size:23px}.steps.s4 .step span{font-size:17px}
+.no.gift{width:220px}.no.gift .gi{display:grid;place-items:center;width:176px;height:176px;margin-top:8px;border-radius:44px;background:linear-gradient(150deg,#fff3c4,#f2cf6b 45%,#e9b949);color:#2b1d00;box-shadow:0 0 0 8px rgba(255,209,102,.25),0 0 60px rgba(255,209,102,.45)}
+.no.gift .gi .ico{width:104px;height:104px;stroke-width:1.7}
+.prize .staff b{background:#fff;color:#7a5300}
+.prize .note .seal .stamp{mix-blend-mode:normal}
 /* stamps (same artwork as the site) */
 .stamp{position:relative;width:100%;aspect-ratio:1;color:var(--ink);transform:rotate(var(--rot,0deg));
  -webkit-mask:url(assets/ink-grunge.webp) var(--mx,0) var(--my,0)/150% auto;mask:url(assets/ink-grunge.webp) var(--mx,0) var(--my,0)/150% auto;mix-blend-mode:multiply;opacity:.92}
@@ -132,6 +144,35 @@ async function page(b) {
 </div>`;
 }
 
+// prize counter: staff scan the participant's ticket, then hand over the raffle slip
+async function prizePage() {
+  const P = EVENT.prizePoint;
+  const qr = await qrSvg(`${EVENT.staffUrl}#/s/${P.id}`, { ecc: "Q", margin: 2, color: "#021b2e" });
+  return `<div class="poster prize" style="--c:#c9971c;--c2:#9a6c00">
+  ${patternSvg("hachure", { w: 1240, h: 1754, u: 64, sw: 2.2, seed: 99 })}
+  <header class="top"><img class="logo" src="assets-src/logo-full.png" alt="">
+    <div class="staff"><b>${icon("user")}STAFF ONLY</b><span>สำหรับเจ้าหน้าที่จุดลุ้นรางวัล</span></div></header>
+  <div class="head"><div class="no gift"><small>PRIZE</small><span class="gi">${icon("gift")}</span></div>
+    <div class="nm"><h1 style="font-size:68px">${esc(P.th)}</h1><span class="en" style="color:#ffe08a">PRIZE COUNTER · TICKET CHECK</span>
+      <span class="pl">${icon("pin")}${esc(P.place)}</span></div></div>
+  <div class="mid"><div class="card">
+    <span class="badge" style="color:#9a6c00">${icon("gift")}</span>
+    <div class="qr">${qr}</div>
+    <h2>สแกนเพื่อเปิดจอเคาน์เตอร์</h2>
+    <p>มือถือ/แท็บเล็ตที่มีกล้อง · ใส่ชื่อ + PIN เจ้าหน้าที่</p></div></div>
+  <div class="steps s4">
+    <div class="step"><i>1</i><div><b>สแกนตั๋ว</b><span>กด "สแกนตั๋วลุ้นรางวัล" สแกน QR บนตั๋วในมือถือผู้เข้าร่วม (หรือพิมพ์รหัสบนตั๋ว)</span></div></div>
+    <div class="step"><i>2</i><div><b>ระบบตรวจสิทธิ์</b><span>ต้องสะสมครบ ${REQUIRED} ตรา · ตั๋ว 1 ใบใช้ได้ครั้งเดียว ขึ้นเตือนถ้าใช้ไปแล้ว</span></div></div>
+    <div class="step"><i>3</i><div><b>ยืนยันรับตั๋ว</b><span>ผ่านแล้วกด "ยืนยันรับตั๋ว" มือถือผู้เข้าร่วมจะขึ้นว่ายื่นแล้ว</span></div></div>
+    <div class="step"><i>4</i><div><b>ยื่นใบจับฉลาก</b><span>${esc(EVENT.raffle.slip)}</span></div></div>
+  </div>
+  <div class="note"><div><small>FOR PARTICIPANTS <em>· ผู้เข้าร่วม</em></small><b>เปิด "ตั๋วลุ้นรางวัล" ในมือถือ ให้เจ้าหน้าที่สแกน</b>
+    <span>สะสมตราครบ ${REQUIRED} บูธแล้วได้ตั๋ว · ${esc(EVENT.raffle.announce)} · QR บนโปสเตอร์นี้สำหรับเจ้าหน้าที่</span></div>
+    <div class="seal">${finalSealHTML()}</div></div>
+  <div class="foot"><span>เตรียม: ใบจับฉลาก · ปากกา · กล่องจับฉลาก</span><span>${esc(EVENT.short)} · ${esc(EVENT.dateText)}</span></div>
+</div>`;
+}
+
 const doc = (inner) => `<!doctype html><html lang="th"><head><meta charset="utf-8"><base href="${pathToFileURL(root).href}">
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;700;800&family=Chakra+Petch:wght@700&family=IBM+Plex+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
 <style>${css.replaceAll("url(assets/ink-grunge.webp)", `url(${dataUri("assets/ink-grunge.webp")})`).replaceAll("url(assets/geos-ink.webp)", `url(${dataUri("assets/geos-ink.webp")})`)}</style></head><body>${inner}</body></html>`;
@@ -141,7 +182,19 @@ const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1240, height: 1754 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
 const p = await ctx.newPage();
 const pngs = [];
-const booths = EVENT.booths.filter((b) => !only.length || only.includes(b.no));
+const booths = prizeOnly && !only.length ? [] : EVENT.booths.filter((b) => !only.length || only.includes(b.no));
+if (!only.length || prizeOnly) {
+  writeFileSync(tmp, doc(await prizePage()));
+  await p.goto(pathToFileURL(tmp).href, { waitUntil: "networkidle" });
+  await p.evaluate(() => document.fonts.ready);
+  const over = await p.evaluate(() => { const P = document.querySelector(".poster").getBoundingClientRect(); return [...document.querySelectorAll(".poster > :not(.pat) *")].filter((e) => { const r = e.getBoundingClientRect(); return r.width && (r.bottom > P.bottom - 20 || r.right > P.right - 20); }).length; });
+  const png = out + "_prize.png";
+  await p.screenshot({ path: png });
+  execFileSync("python3", [root + "scripts/flat-pdf.py", png, out + "prize-counter.pdf", "210", "297", "88"], { stdio: "pipe" });
+  if (process.env.KEEP_PNG) execFileSync("cp", [png, out + "prize-counter-preview.png"]);
+  rmSync(png);
+  console.log("prize counter" + (over ? "  OVERFLOW" : " ok"));
+}
 for (const b of booths) {
   writeFileSync(tmp, doc(await page(b)));
   await p.goto(pathToFileURL(tmp).href, { waitUntil: "networkidle" });
@@ -162,7 +215,7 @@ for (const b of booths) {
 await browser.close();
 rmSync(tmp);
 
-if (!only.length) {
+if (!only.length && !prizeOnly) {
   execFileSync("python3", [root + "scripts/flat-pdf.py", pngs.join(","), out + "booth-posters-all.pdf", "210", "297", "88"], { stdio: "inherit" });
   // contact sheet: 6 × 4 thumbnails
   execFileSync("python3", ["-c", `
