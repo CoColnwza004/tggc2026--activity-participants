@@ -3,7 +3,7 @@
 import { EVENT, BOOTH_IDS, REQUIRED } from "../shared/event.js";
 import {
   json, fail, body, clientIp, master, settings, resetSettingsCache, boothSecret, staffToken, staffFromReq,
-  isLimited, bump, passportState, addStamp, clean,
+  isLimited, bump, passportState, addStamp, clean, hasAllStamps, runDraw,
 } from "../shared/server.js";
 
 const STATIONS = [...BOOTH_IDS, EVENT.prizePoint.id];
@@ -128,6 +128,17 @@ async function api(env, req, url) {
     if (!s0) return fail(404, "nf", "ไม่พบสมุดรหัสนี้");
     const fresh = await addStamp(env, b.pid, b.booth, Date.now(), "staff:" + who.name);
     return json({ ok: true, fresh, ...(await passportState(env, b.pid)), now: Date.now() });
+  }
+  if (route === "POST /api/draw") {
+    // prize point: staff scanned the participant's ticket → the server draws (once per passport)
+    const b = await body(req);
+    if (!/^G[0-9A-Z]{6}$/.test(b.pid || "")) return fail(400, "bad", "รหัสตั๋วไม่ถูกต้อง");
+    const s0 = await passportState(env, b.pid);
+    if (!s0) return fail(404, "nf", "ไม่พบตั๋ว/สมุดรหัสนี้");
+    if (s0.draw) return json({ ok: true, already: true, ...s0, now: Date.now() });
+    if (!(await hasAllStamps(env, b.pid))) return fail(400, "incomplete", "ยังสะสมตราไม่ครบ ไม่มีสิทธิ์ลุ้น");
+    const r = await runDraw(env, b.pid);
+    return json({ ok: true, already: !!r.already, ...(await passportState(env, b.pid)), now: Date.now() });
   }
   if (route === "POST /api/claim") {
     const b = await body(req);

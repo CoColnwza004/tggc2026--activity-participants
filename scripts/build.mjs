@@ -82,7 +82,7 @@ async function site(name, { sw = true, extraHeaders = "" } = {}) {
 
   // 6. service worker
   if (sw) {
-    const pre = ["/", entry, ...Object.values(map).filter((p) => /geos|logo|ink-grunge|icon-192/.test(p)).map((p) => "/" + p)];
+    const pre = ["/", ...jsFiles, ...Object.values(map).filter((p) => /geos|logo|ink-grunge|icon-192/.test(p)).map((p) => "/" + p)];
     if (existsSync(join(src, "manifest.webmanifest"))) pre.push("/manifest.webmanifest");
     const version = hash(html + jsFiles.join() + pre.join());
     const swSrc = readFileSync(join(root, "participant", "src", "sw.js"), "utf8").replace("__VERSION__", version).replace("__PRECACHE__", JSON.stringify(pre));

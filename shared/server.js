@@ -82,7 +82,7 @@ export async function passFromReq(env, req) {
 export async function staffToken(env, role, name, hours = 18) {
   const exp = Date.now() + hours * 3600e3;
   const pin = role === "admin" ? env.ADMIN_PIN : env.STAFF_PIN;
-  const n = encodeURIComponent(name).slice(0, 80);
+  const n = encodeURIComponent(String(name).slice(0, 40)).replace(/\./g, "%2E"); // cut before encoding: a cut inside a %XX escape breaks decoding
   return `${role}.${exp}.${n}.${await sig(env, `staff:${role}:${exp}:${n}:${pin}`)}`;
 }
 /** Authorization: Bearer <token> → {role, name} or null */
@@ -93,7 +93,9 @@ export async function staffFromReq(env, req) {
   const pin = role === "admin" ? env.ADMIN_PIN : env.STAFF_PIN;
   if (!pin) return null;
   if ((await sig(env, `staff:${role}:${exp}:${n}:${pin}`)) !== s) return null;
-  return { role, name: decodeURIComponent(n) };
+  let nm = "เจ้าหน้าที่";
+  try { nm = decodeURIComponent(n); } catch { /* keep default */ }
+  return { role, name: nm };
 }
 
 // ---------- rate limiting (fixed window, stored in D1) ----------

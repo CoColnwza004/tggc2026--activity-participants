@@ -68,6 +68,11 @@
         <span class="secs" id="secsTxt">30</span></div>
       <p class="how" id="howTxt">ผู้เข้าร่วมสแกน QR ด้วยเว็บสะสมตรา หรือกล้องมือถือ · หรือพิมพ์รหัส 6 หลัก</p>
     </div>
+    <div class="tk-scan" id="tkScan" hidden>
+      <button class="tk-big" type="button" id="tkScanBtn"><span class="tk-ring">${camera}</span><b>สแกนตั๋วลุ้นรางวัล</b><small>QR บนตั๋วในมือถือผู้เข้าร่วม</small></button>
+      <form class="search" id="tkForm"><input class="input" id="tkId" maxlength="20" placeholder="หรือพิมพ์รหัสบนตั๋ว เช่น G7K2M9Q" autocapitalize="characters" autocomplete="off"><button class="btn" type="submit">ตรวจ</button></form>
+      <p class="how">ระบบตรวจว่าสะสมครบหรือไม่ · 1 ตั๋วลุ้นได้ 1 ครั้ง · ผลขึ้นที่มือถือผู้เข้าร่วมพร้อมกัน</p>
+    </div>
     <aside class="st-side">
       <div class="count-card"><span id="countLab">ให้ตราไปแล้ว</span><b id="countNum">–</b><small id="countSub">คน</small></div>
       <button class="btn" type="button" id="scanPassBtn">${camera}<span id="scanPassTxt">สแกนสมุดผู้เข้าร่วม</span></button>

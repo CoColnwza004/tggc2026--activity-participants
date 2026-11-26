@@ -5,7 +5,7 @@ import { STEP, windowAt, codeFor, makePayload } from "../../shared/otp.js";
 import { icon } from "../../shared/web/icons.js";
 import { qrSvg } from "../../shared/web/qr.js";
 import { startScanner } from "../../shared/web/scanner.js";
-import { sfx, buzz } from "../../shared/web/fx.js";
+import { sfx, buzz, burst, fireworks } from "../../shared/web/fx.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -124,9 +124,14 @@ async function station(id) {
   $("#countNum").textContent = "–";
   $("#feed").innerHTML = "";
   lastWin = -1; lastCount = -1;
+  $(".qr-stage").hidden = prize;
+  $("#tkScan").hidden = !prize;
+  $("#scanPassBtn").hidden = prize;
   keepAwake();
-  await tickQR();
-  timers.push(setInterval(tickQR, 1000));
+  if (!prize) {
+    await tickQR();
+    timers.push(setInterval(tickQR, 1000));
+  }
   refreshStation();
   timers.push(setInterval(() => { if (!document.hidden) refreshStation(); }, prize ? 15000 : 30000));
 }
@@ -190,14 +195,14 @@ document.addEventListener("fullscreenchange", () => $("[data-screen=station]").c
 let stopCam = null;
 function closeCam() { if (stopCam) { stopCam(); stopCam = null; } $("#cam").hidden = true; }
 $("#camClose").onclick = closeCam;
-const passId = (text) => { const m = String(text).match(/GEOS-PASS:(G[0-9A-Z]{6})/) || String(text).trim().toUpperCase().match(/^(G[0-9A-Z]{6})$/); return m && m[1]; };
+const passId = (text) => { const m = String(text).match(/GEOS-(?:PASS|TICKET):(G[0-9A-Z]{6})/) || String(text).trim().toUpperCase().match(/^(G[0-9A-Z]{6})$/); return m && m[1]; };
 
 async function openCam(mode) {
   sfx.unlock();
   const cam = $("#cam");
   cam.hidden = false;
   $("#camResult").hidden = true;
-  $("#camTitle").textContent = mode === "stamp" ? `ประทับตรา · บูธ ${boothById(curStation).no}` : "สแกน QR สมุดผู้เข้าร่วม";
+  $("#camTitle").textContent = mode === "ticket" ? "สแกนตั๋วลุ้นรางวัล" : mode === "stamp" ? `ประทับตรา · บูธ ${boothById(curStation).no}` : "สแกน QR สมุดผู้เข้าร่วม";
   $("#camMsg").textContent = "หันกล้องไปที่ QR \"ของฉัน\" ในเว็บของผู้เข้าร่วม";
   let busy = false;
   stopCam = await startScanner($("#camVideo"), async (text) => {
@@ -207,6 +212,7 @@ async function openCam(mode) {
     busy = true;
     try {
       if (mode === "stamp") await staffStamp(id);
+      else if (mode === "ticket") { closeCam(); openTicket(id); }
       else { closeCam(); location.hash = "#/lookup"; await showPassport(id); }
     } finally { busy = false; }
     return mode !== "stamp";
@@ -230,6 +236,76 @@ async function staffStamp(pid) {
   }
 }
 $("#scanPassBtn").onclick = () => (curStation === PRIZE ? openCam("lookup") : openCam("stamp"));
+
+// ---------------------------------------------------------------- prize point: ticket → draw → hand out
+$("#tkScanBtn").onclick = () => openCam("ticket");
+$("#tkForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const id = passId($("#tkId").value);
+  if (!id) { toast("รหัสตั๋วขึ้นต้นด้วย G ตามด้วย 6 ตัว", true); return; }
+  $("#tkId").value = "";
+  openTicket(id);
+});
+const modal = (html) => { $("#modalCard").innerHTML = html; $("#modal").hidden = false; };
+const closeModal = () => { $("#modal").hidden = true; if (curStation === PRIZE) refreshStation(); };
+$("#modal").addEventListener("click", (e) => { if (e.target.id === "modal" || e.target.closest("[data-mclose]")) closeModal(); });
+
+function ticketHead(j) {
+  const p = j.passport, n = BOOTH_IDS.filter((b) => j.stamps[b]).length;
+  return `<div class="tkm-head"><span class="id">${esc(p.id)}</span><h3>${esc(p.name)}</h3><div class="meta">${esc(p.school || "")} · ${ROLE_TH[p.role] || ""}</div>
+    <div class="tkm-n ${n >= REQUIRED ? "ok" : "no"}">${n >= REQUIRED ? "✓" : "✗"} สะสม ${n}/${BOOTH_IDS.length} ตรา</div></div>`;
+}
+function resultBox(d, pid) {
+  if (!d.win) return `<div class="tkm-res lose"><b>ไม่ได้รางวัล</b><span>ปีหน้ามาลุ้นใหม่นะ! ขอบคุณที่ร่วมกิจกรรม</span></div>`;
+  return `<div class="tkm-res win"><small>ได้รับรางวัล</small><b>🎉 ${esc(d.prize.name)}</b>
+    ${d.claimed ? `<span>✓ มอบแล้ว ${fmt(d.claimed)} โดย ${esc(d.claimedBy || "")}</span>` : `<button class="btn gold wide" type="button" data-give="${esc(pid)}">มอบรางวัลแล้ว</button>`}</div>`;
+}
+async function openTicket(id) {
+  sfx.unlock();
+  modal(`<p>กำลังตรวจตั๋ว ${esc(id)}…</p>`);
+  let j;
+  try { j = await api(`/api/passport/${id}`); }
+  catch (e) { modal(`<div class="tkm-res lose"><b>ตรวจตั๋วไม่ได้</b><span>${esc(e.message)}</span></div><button class="btn ghost wide" type="button" data-mclose>ปิด</button>`); buzz([80, 40, 80]); return; }
+  const n = BOOTH_IDS.filter((b) => j.stamps[b]).length;
+  if (j.draw) {
+    modal(`${ticketHead(j)}<p class="tkm-note">ตั๋วนี้ลุ้นไปแล้วเมื่อ ${fmt(j.draw.at)}</p>${resultBox(j.draw, id)}<button class="btn ghost wide" type="button" data-mclose>ปิด</button>`);
+    buzz([40, 40, 40]);
+    return;
+  }
+  if (n < REQUIRED) {
+    modal(`${ticketHead(j)}<div class="tkm-res lose"><b>ยังไม่มีสิทธิ์ลุ้น</b><span>ขาดอีก ${REQUIRED - n} ตรา</span></div><button class="btn ghost wide" type="button" data-mclose>ปิด</button>`);
+    buzz([80, 40, 80]);
+    return;
+  }
+  modal(`${ticketHead(j)}<button class="tkm-draw" type="button" data-draw="${esc(id)}"><span>🎲</span>กดลุ้นรางวัล</button><button class="btn ghost wide" type="button" data-mclose>ยกเลิก</button>`);
+  sfx.pop(); buzz(40);
+}
+async function drawFor(id, btn) {
+  btn.disabled = true;
+  const names = [...EVENT.prizes.map((p) => p.name), "ลุ้น…"];
+  let i = 0;
+  btn.outerHTML = `<div class="tkm-spin" id="tkSpin"><span>${esc(names[0])}</span></div>`;
+  const spin = setInterval(() => { const el = $("#tkSpin span"); if (el) el.textContent = names[i++ % names.length]; sfx.tick(); }, 120);
+  const t0 = Date.now();
+  let j, err;
+  try { j = await api("/api/draw", { pid: id }); } catch (e) { err = e; }
+  await new Promise((r) => setTimeout(r, Math.max(0, 2600 - (Date.now() - t0))));
+  clearInterval(spin);
+  if (err) { modal(`<div class="tkm-res lose"><b>ลุ้นไม่สำเร็จ</b><span>${esc(err.message)}</span></div><button class="btn ghost wide" type="button" data-mclose>ปิด</button>`); return; }
+  modal(`${ticketHead(j)}${resultBox(j.draw, id)}<button class="btn ghost wide" type="button" data-mclose>ปิด</button>`);
+  if (j.draw.win) { sfx.win(); buzz([40, 60, 120]); fireworks(2400); burst(innerWidth / 2, innerHeight / 2, 120, 1.1); }
+  else { sfx.lose(); buzz(60); }
+}
+$("#modalCard").addEventListener("click", async (e) => {
+  const d = e.target.closest("[data-draw]");
+  if (d) { drawFor(d.dataset.draw, d); return; }
+  const g = e.target.closest("[data-give]");
+  if (g) {
+    g.disabled = true;
+    try { const j = await api("/api/claim", { pid: g.dataset.give }); g.outerHTML = `<span>✓ มอบแล้ว ${fmt(j.draw.claimed)}</span>`; toast("บันทึกการมอบรางวัลแล้ว"); sfx.pop(); }
+    catch (ex) { toast(ex.message, true); g.disabled = false; }
+  }
+});
 
 // ---------------------------------------------------------------- lookup
 function lookup() { show("lookup"); }

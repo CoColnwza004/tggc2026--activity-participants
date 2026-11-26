@@ -4,7 +4,7 @@ import { EVENT, BOOTH_IDS } from "../shared/event.js";
 import { parsePayload } from "../shared/otp.js";
 import {
   json, fail, body, clientIp, master, passToken, passFromReq, verifyCode, isLimited, bump,
-  newId, normName, clean, passportState, addStamp, hasAllStamps, runDraw,
+  newId, normName, clean, passportState, addStamp,
 } from "../shared/server.js";
 
 const ROLES = new Set(["student", "teacher", "guest"]);
@@ -75,24 +75,6 @@ async function stamp(env, req) {
   return json({ ok: true, booth: p.booth, fresh, ...state, now: Date.now() });
 }
 
-async function draw(env, req) {
-  const pid = await passFromReq(env, req);
-  if (!pid) return fail(401, "auth", "ไม่พบสมุดสะสมตรา");
-  const b = await body(req);
-  const p = parsePayload(b.c);
-  if (!p || p.booth !== EVENT.prizePoint.id) return fail(400, "code", "กรุณาสแกน QR ที่จุดลุ้นรางวัล");
-  const lk = "code:" + pid;
-  if (await isLimited(env, lk, 15)) return fail(429, "slow", "ใส่รหัสผิดหลายครั้ง รอ 10 นาทีแล้วลองใหม่");
-  if (!(await verifyCode(env, p, scanTime(b)))) {
-    await bump(env, lk, 600);
-    return fail(400, "expired", "QR หมดอายุแล้ว สแกน QR ล่าสุดที่จุดลุ้นรางวัลอีกครั้ง");
-  }
-  if (!(await hasAllStamps(env, pid))) return fail(400, "incomplete", "ยังสะสมตราไม่ครบทุกบูธ");
-  const r = await runDraw(env, pid);
-  const state = await passportState(env, pid);
-  return json({ ok: true, already: !!r.already, ...state, now: Date.now() });
-}
-
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
@@ -105,7 +87,6 @@ export default {
         case "POST /api/join": return await join(env, req);
         case "GET /api/me": return await me(env, req);
         case "POST /api/stamp": return await stamp(env, req);
-        case "POST /api/draw": return await draw(env, req);
         case "GET /api/ping": return json({ ok: true, now: Date.now() });
       }
       return fail(404, "nf", "not found");
