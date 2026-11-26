@@ -104,9 +104,16 @@ function home() {
   $("#whoami").textContent = `${A.name} · ${A.role === "admin" ? "แอดมิน" : "เจ้าหน้าที่"}`;
   $("#adminCard").hidden = A.role !== "admin";
   $("#adminCard").href = EVENT.adminUrl;
-  $("#stations").innerHTML = EVENT.booths.map((b) => `<a class="station-card" href="#/s/${b.id}" style="--c:${b.color}">${b.logo ? `<img class="slogo" src="${logoUrl(b)}" alt="" loading="lazy">` : icon(b.icon)}<span class="no">BOOTH ${String(b.no).padStart(2, "0")} · ${esc(b.en)}</span><b>${esc(b.th)}</b><small>${esc(b.place)}</small></a>`).join("");
+  $("#stations").innerHTML = EVENT.booths.map((b) => `<a class="station-card" href="#/s/${b.id}" style="--c:${b.color}">${cardPattern(b)}${b.logo ? `<img class="slogo" src="${logoUrl(b)}" alt="" loading="lazy">` : icon(b.icon)}<span class="no">BOOTH ${String(b.no).padStart(2, "0")}<em><i> · </i>${esc(b.en)}</em></span><b>${esc(b.th)}</b><small>${esc(b.place)}</small></a>`).join("");
   $("#prizeStation").innerHTML = `<a class="station-card" href="#/s/${PRIZE}" style="--c:#c9971c">${icon("gift")}<span class="no">PRIZE COUNTER</span><b>${esc(EVENT.prizePoint.name)}</b><small>${esc(EVENT.prizePoint.place)}</small></a>`;
 }
+
+// each booth card wears its poster pattern (drawn once, reused)
+const cardPats = new Map();
+const cardPattern = (b) => {
+  if (!cardPats.has(b.no)) cardPats.set(b.no, patternSvg(boothPattern(b.no), { w: 320, h: 200, u: 26, sw: 1.1, seed: b.no, cls: "sc-pat" }));
+  return cardPats.get(b.no);
+};
 
 // ---------------------------------------------------------------- station (rotating QR)
 let wake = null;
@@ -180,7 +187,7 @@ async function refreshStation() {
     lastCount = j.count;
     $("#countNum").textContent = j.count.toLocaleString("th-TH");
     $("#countSub").textContent = "คน";
-    $("#feed").innerHTML = id === PRIZE ? prizeFeed(j.recent) : (j.recent.length ? `<p class="feed-h">ล่าสุด</p>` : "") + j.recent.map((r) => `<div class="it"><b>${esc(r.name)}</b><time>${fmt(r.at)}</time><small>${esc(r.school || "")}${r.via && r.via.startsWith("staff") ? " · สแกนโดยเจ้าหน้าที่" : ""}</small></div>`).join("");
+    $("#feed").innerHTML = id === PRIZE ? prizeFeed(j.recent) : (j.recent.length ? `<p class="feed-h">ล่าสุด</p>` : `<p class="feed-h">ยังไม่มีผู้รับตรา · รายชื่อจะขึ้นที่นี่</p>`) + j.recent.map((r) => `<div class="it"><b>${esc(r.name)}</b><time>${fmt(r.at)}</time><small>${esc(r.school || "")}${r.via && r.via.startsWith("staff") ? " · สแกนโดยเจ้าหน้าที่" : ""}</small></div>`).join("");
   } catch { /* offline: QR keeps working */ }
 }
 
