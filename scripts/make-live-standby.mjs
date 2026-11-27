@@ -1,7 +1,8 @@
-// "Live starting soon" standby screen for the Facebook livestream, same look as the site and the
-// lower thirds: navy sky, the real dotted globe, น้องจีออส, partner logos in the glowing white frame.
-//   poster/live/standby.png   1920×1080
-//   poster/live/canva/TGGC2026-standby.pptx   the same, editable in Canva (Create a design → Import file)
+// Full-screen cards for the Facebook livestream, same look as the site and the lower thirds:
+// navy sky, the real dotted globe, น้องจีออส, partner logos in the glowing white frame.
+//   poster/live/standby.png   "live starting soon" (before the stream)
+//   poster/live/ending.png    "thank you for watching" (end of the stream)
+//   poster/live/canva/TGGC2026-standby.pptx, TGGC2026-ending.pptx   the same, editable in Canva (Create a design → Import file)
 // Usage: node scripts/make-live-standby.mjs
 import { build } from "esbuild";
 import { mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
@@ -76,6 +77,7 @@ body{font-family:Kanit,sans-serif;color:#fff;-webkit-font-smoothing:antialiased;
 .live{display:inline-flex;align-items:center;gap:14px;padding:12px 26px 12px 20px;border-radius:999px;font:700 26px/1 "Chakra Petch",Kanit,sans-serif;letter-spacing:.14em;
   background:rgba(2,27,46,.55);border:2px solid rgba(255,255,255,.22);box-shadow:0 0 22px rgba(255,59,92,.25)}
 .live em{font-style:normal}
+.live.end i{background:var(--mint);box-shadow:0 0 0 6px rgba(44,195,148,.25),0 0 16px var(--mint)}
 .live i{width:18px;height:18px;border-radius:50%;background:#ff3b5c;box-shadow:0 0 0 6px rgba(255,59,92,.25),0 0 16px #ff3b5c}
 .live span{font-family:Kanit,sans-serif;letter-spacing:0;font-weight:500;color:#cfeaf5}
 h1{margin-top:22px;font-weight:800;line-height:1.08;letter-spacing:-.005em}
@@ -111,7 +113,12 @@ h1 .l2 [data-t]{background:linear-gradient(90deg,#8ff0c7,var(--mint) 45%,#5fd3ff
   box-shadow:0 0 0 3px rgba(143,212,255,.9),0 0 24px rgba(58,168,255,.7)}
 `;
 
-const html = `<!doctype html><html lang="th"><head><meta charset="utf-8">
+const SCREENS = {
+  standby: { pill: ["LIVE", "ถ่ายทอดสด"], l1: "รอสักครู่", l2: "การถ่ายทอดสดกำลังจะเริ่มขึ้น", dots: true, fb: "Live on Facebook · ถ่ายทอดสดทางเพจ" },
+  ending: { end: true, pill: ["END", "จบการถ่ายทอดสด"], l1: "ขอบคุณที่รับชม", l2: "แล้วพบกันใหม่", fb: "Follow us · ติดตามข่าวสารได้ที่เพจ" },
+};
+
+const html = (S) => `<!doctype html><html lang="th"><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;700;800&family=Chakra+Petch:wght@700&family=IBM+Plex+Sans+Thai:wght@600&display=swap" rel="stylesheet">
 <style>${css}</style></head><body><div class="s">
   <div class="sky"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div><div class="stars"></div><div class="topo"></div>
@@ -122,26 +129,30 @@ const html = `<!doctype html><html lang="th"><head><meta charset="utf-8">
   <div class="partners">${partners}</div>
   <div class="main">
     <div class="brand"><div class="logo"><img data-img="assets-src/logo-full.png" src="${uri("assets-src/logo-full.png")}" alt=""></div>
-      <div class="live"><i></i><em data-t>LIVE</em> <span data-t>ถ่ายทอดสด</span></div></div>
-    <h1><span class="l1" data-t>รอสักครู่</span><span class="l2"><span data-t data-color="#2cc394">การถ่ายทอดสดกำลังจะเริ่มขึ้น</span><span class="dots"><b></b><b></b><b></b></span></span></h1>
+      <div class="live${S.end ? " end" : ""}"><i></i><em data-t>${S.pill[0]}</em> <span data-t>${S.pill[1]}</span></div></div>
+    <h1><span class="l1" data-t>${S.l1}</span><span class="l2"><span data-t data-color="#2cc394">${S.l2}</span>${S.dots ? `<span class="dots"><b></b><b></b><b></b></span>` : ""}</span></h1>
     <div class="ev"><p data-t>การแข่งขันอัจฉริยภาพทางด้านภูมิศาสตร์และภูมิสารสนเทศแห่งประเทศไทย<br>ระดับมัธยมศึกษา ครั้งที่ 3 พ.ศ. 2569</p></div>
     <div class="info"><div class="chip d">${cal}<span data-t>${EVENT.dateText}</span></div><div class="chip">${pin}<span data-t>${EVENT.venue} ${EVENT.venueSub}</span></div></div>
   </div>
-  <div class="fb">${fb}<div><small data-t>Live on Facebook · ถ่ายทอดสดทางเพจ</small><b data-t>${PAGE_TH}</b><span data-t>${PAGE_EN}</span></div></div>
+  <div class="fb">${fb}<div><small data-t>${S.fb}</small><b data-t>${PAGE_TH}</b><span data-t>${PAGE_EN}</span></div></div>
   <div class="bar"><span data-t>The 3rd Thailand Geography Genius Challenge 2026 (TGGC2026)</span></div>
 </div><script>${globeJs}</script></body></html>`;
 
 const tmp = out + ".tmp.html";
-writeFileSync(tmp, html);
 const b = await chromium.launch();
 const ctx = await b.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1, reducedMotion: "reduce" });
-const p = await ctx.newPage();
-await p.goto(pathToFileURL(tmp).href, { waitUntil: "networkidle" });
-await p.waitForFunction(() => window.__ready === true, null, { timeout: 30000 });
-await p.screenshot({ path: out + "standby.png" });
-const bg = out + ".standby-bg.png";
-const L = await layers(p, bg);
+for (const [name, S] of Object.entries(SCREENS)) {
+  writeFileSync(tmp, html(S));
+  const p = await ctx.newPage();
+  await p.goto(pathToFileURL(tmp).href, { waitUntil: "networkidle" });
+  await p.waitForFunction(() => window.__ready === true, null, { timeout: 30000 });
+  await p.screenshot({ path: out + name + ".png" });
+  const bg = out + `.${name}-bg.png`;
+  const L = await layers(p, bg);
+  await p.close();
+  writePptx([{ name, ...L }], out + `canva/TGGC2026-${name}.pptx`, out + ".spec.json");
+  for (const f of [bg, out + ".spec.json"]) rmSync(f);
+  console.log(`poster/live/${name}.png`);
+}
 await b.close();
-writePptx([{ name: "standby", ...L }], out + "canva/TGGC2026-standby.pptx", out + ".spec.json");
-for (const f of [tmp, bg, out + ".spec.json"]) rmSync(f);
-console.log("poster/live/standby.png");
+rmSync(tmp);
