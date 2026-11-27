@@ -6,7 +6,6 @@ import {
   isLimited, bump, passportState, stampAndState, redeemAndState, clean, boothConfig, logoResponse,
 } from "../shared/server.js";
 import { adminApi } from "../shared/admin.js";
-import { currentAnn, postAnn, clearAnn, annStats, pushPage, PAGE } from "../shared/announce.js";
 
 const STATIONS = [...BOOTH_IDS, EVENT.prizePoint.id];
 
@@ -86,20 +85,6 @@ async function api(env, req, url) {
     if (!r.fresh && !r.state.redeem) return fail(400, "incomplete", "ยังสะสมตราไม่ครบ ยังไม่มีสิทธิ์");
     return json({ ok: true, fresh: r.fresh, ...r.state, now: Date.now() });
   }
-
-  // prize counter: announce the raffle (start time / place) + notify the phones that allowed it
-  if (route === "GET /api/announce") return json({ ok: true, ann: await currentAnn(env, true), ...(await annStats(env)), page: PAGE });
-  if (route === "POST /api/announce") {
-    const r = await postAnn(env, await body(req), who);
-    return r.error ? fail(400, "bad", r.error) : json({ ok: true, ...r, page: PAGE });
-  }
-  if (route === "POST /api/announce/push") {
-    const b = await body(req);
-    const id = +b.id, page = +b.page;
-    if (!(id > 0) || !(page >= 0) || page > 200) return fail(400, "bad", "ข้อมูลไม่ถูกต้อง");
-    return json({ ok: true, ...(await pushPage(env, id, page)) });
-  }
-  if (route === "POST /api/announce/clear") { await clearAnn(env); return json({ ok: true }); }
 
   const ar = await adminApi(env, req, url, who); // admin role: still used by the lookup screen (undo a ticket)
   if (ar) return ar;

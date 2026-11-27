@@ -141,7 +141,6 @@ export async function adminApi(env, req, url, who) {
       stmts.push(
         db.prepare(`DELETE FROM stamps WHERE pid IN (${q})`).bind(...part),
         db.prepare(`DELETE FROM redeems WHERE pid IN (${q})`).bind(...part),
-        db.prepare(`DELETE FROM push_subs WHERE pid IN (${q})`).bind(...part),
         db.prepare(`DELETE FROM attempts WHERE k IN (${q})`).bind(...part.map((x) => "code:" + x)),
         db.prepare(`DELETE FROM passports WHERE id IN (${q})`).bind(...part),
       );
@@ -155,7 +154,7 @@ export async function adminApi(env, req, url, who) {
     // wipes test data before the real event: passports, stamps, tickets (booth details and logos stay)
     const b = await body(req);
     if (b.confirm !== "RESET") return fail(400, "confirm", "พิมพ์ RESET เพื่อยืนยัน");
-    await env.DB.batch(["stamps", "redeems", "completed", "counts", "passports", "attempts", "push_subs", "announce"].map((t) => env.DB.prepare(`DELETE FROM ${t}`)));
+    await env.DB.batch(["stamps", "redeems", "completed", "counts", "passports", "attempts"].map((t) => env.DB.prepare(`DELETE FROM ${t}`)));
     AN = null;
     return json({ ok: true, ...(await summary(env)), now: Date.now() });
   }

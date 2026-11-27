@@ -3,7 +3,6 @@
 // so the only setup is binding the database and setting the two PINs.
 import { BOOTH_IDS, REQUIRED } from "./event.js";
 import { b64u, hmac, codeFor, windowAt } from "./otp.js";
-import { ANN_SCHEMA } from "./announce.js";
 
 // one row per ticket handed in at the prize counter (PRIMARY KEY = one ticket per passport)
 const REDEEMS = [
@@ -21,7 +20,7 @@ const BOOTH_CFG = [
   `CREATE TABLE IF NOT EXISTS booth_logo (id TEXT PRIMARY KEY, v TEXT NOT NULL, mime TEXT NOT NULL, data TEXT NOT NULL)`,
 ];
 // bump when the derived tables change; also rebuilt when the booth list or REQUIRED changes
-const SCHEMA_V = `6|${REQUIRED}|${BOOTH_IDS.join(",")}`;
+const SCHEMA_V = `5|${REQUIRED}|${BOOTH_IDS.join(",")}`;
 export const BUCKET = 15 * 60e3; // stamps-over-time counters: 15-minute buckets (key "t:<ms / BUCKET>")
 const IN_BOOTHS = BOOTH_IDS.map(() => "?").join(",");
 const SCHEMA = [
@@ -32,7 +31,6 @@ const SCHEMA = [
   ...REDEEMS,
   ...COUNTS,
   ...BOOTH_CFG,
-  ...ANN_SCHEMA,
   `CREATE TABLE IF NOT EXISTS attempts (k TEXT PRIMARY KEY, n INTEGER NOT NULL, until INTEGER NOT NULL)`,
 ];
 
@@ -68,7 +66,7 @@ async function migrate(env) {
   let hasN = true;
   try { await db.prepare("SELECT n FROM passports LIMIT 0").all(); } catch { hasN = false; }
   await db.batch([
-    ...[...REDEEMS, ...COUNTS, ...BOOTH_CFG, ...ANN_SCHEMA].map((q) => db.prepare(q)),
+    ...[...REDEEMS, ...COUNTS, ...BOOTH_CFG].map((q) => db.prepare(q)),
     ...(hasN ? [] : [db.prepare("ALTER TABLE passports ADD COLUMN n INTEGER NOT NULL DEFAULT 0")]),
     ...rebuildTotals(db),
     db.prepare("INSERT INTO meta (k, v) VALUES ('schema', ?) ON CONFLICT (k) DO UPDATE SET v = excluded.v").bind(SCHEMA_V),
