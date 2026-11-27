@@ -60,6 +60,7 @@ body { font-family: "Kanit", "Noto Sans Thai", sans-serif; position: relative; }
   color: #3b2600; background: linear-gradient(135deg, #ffe9a3, #ffd166 45%, #f0a925); box-shadow: 0 4px 14px rgba(240,169,37,.35), inset 0 1px 0 rgba(255,255,255,.7); }
 .award.silver b { color: #1f3242; background: linear-gradient(135deg, #ffffff, #dbe5ee 45%, #a7b8c7); box-shadow: 0 4px 14px rgba(120,140,160,.35), inset 0 1px 0 #fff; }
 .award.bronze b { color: #3d1d05; background: linear-gradient(135deg, #ffd8b0, #e8a56a 45%, #b8743f); box-shadow: 0 4px 14px rgba(184,116,63,.35), inset 0 1px 0 rgba(255,255,255,.6); }
+.award.sky b { color: #fff; background: linear-gradient(135deg, #5fc3f5, #0a98c7 50%, #075f98); box-shadow: 0 4px 14px rgba(10,152,199,.35), inset 0 1px 0 rgba(255,255,255,.4); }
 .award.honor b { color: #fff; background: linear-gradient(135deg, #3fd6a6, #15a8a0 50%, #0a7fa8); box-shadow: 0 4px 14px rgba(21,168,160,.35), inset 0 1px 0 rgba(255,255,255,.4); }
 .award span { font-size: 28px; font-weight: 500; color: var(--navy); white-space: nowrap; }
 .name { margin-top: 6px; font-weight: 700; font-size: 62px; line-height: 1.32; color: var(--deep); white-space: nowrap; letter-spacing: .005em;
@@ -88,6 +89,8 @@ const MEDAL = { gold: ["#fff4c2", "#ffd166", "#d9931a", "#7a4b00"], silver: ["#f
 // navy tile with a white line icon (talks)
 const ICONS = {
   mic: `<g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><rect x="47" y="18" width="34" height="58" rx="17"/><path d="M34 60a30 30 0 0 0 60 0M64 90v18M48 108h32"/></g>`,
+  quiz: `<g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 30a12 12 0 0 1 12-12h56a12 12 0 0 1 12 12v40a12 12 0 0 1-12 12H62L42 100V82h-6a12 12 0 0 1-12-12z"/><path d="M54 42a10 10 0 1 1 14 9c-3 1.5-4 3.5-4 6v1"/></g><circle cx="64" cy="68" r="4" fill="#fff"/>`,
+  map: `<g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 34l28-12 32 12 28-12v72l-28 12-32-12-28 12z"/><path d="M48 22v72M80 34v72"/></g>`,
   pin: `<g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M64 112s-34-30-34-56a34 34 0 0 1 68 0c0 26-34 56-34 56z"/><circle cx="64" cy="56" r="12"/></g>`,
 };
 export const iconBadge = (k) => `<div class="badge num"><div class="in"><svg viewBox="0 0 128 128" width="112" height="112" aria-hidden="true">${ICONS[k]}<circle cx="100" cy="24" r="6" fill="#8ff0c7"/></svg></div></div>`;
