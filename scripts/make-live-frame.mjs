@@ -18,7 +18,7 @@ const chromium = pw.chromium || pw.default.chromium;
 const out = live + "frame/";
 mkdirSync(out, { recursive: true });
 const uri = (f) => `data:image/png;base64,${readFileSync(root + f).toString("base64")}`;
-const partners = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
+const partners = ["02", "03", "04", "05", "06", "07", "08", "09", "10"]
   .map((n) => `<img data-img="poster/live/logos/${n}.png" src="${uri(`poster/live/logos/${n}.png`)}" alt="">`).join("");
 const fb = `<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#1877f2"/>
   <path fill="#fff" d="M26.6 38V26.4h3.9l.6-4.5h-4.5v-2.9c0-1.3.4-2.2 2.2-2.2h2.4v-4a32 32 0 0 0-3.5-.2c-3.5 0-5.8 2.1-5.8 6v3.3h-3.9v4.5h3.9V38z"/></svg>`;

@@ -30,8 +30,8 @@ const globeJs = (await build({
 })).outputFiles[0].text;
 
 const uri = (f, t = "image/png") => `data:${t};base64,${readFileSync(root + f).toString("base64")}`;
-// partner logos (cut from the speaker cards), in the order of the cards' logo strip; 11 repeats 02
-const partners = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
+// partner logos (cut from the speaker cards), in the order of the cards' logo strip (no 01 กรมชลประทาน; 11 repeats 02)
+const partners = ["02", "03", "04", "05", "06", "07", "08", "09", "10"]
   .map((n) => `<img data-img="poster/live/logos/${n}.png" src="${uri(`poster/live/logos/${n}.png`)}" alt="">`).join("");
 
 const fb = `<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#1877f2"/>
