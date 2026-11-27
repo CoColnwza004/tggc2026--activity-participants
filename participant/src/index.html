@@ -122,11 +122,13 @@
 <section class="view" data-view="passport" hidden>
   <div class="pp-cover" id="ppCover"></div>
   <div class="journey" id="journey"></div>
+  <div class="medals" id="ppMedals"></div>
   <div class="pp-page">
     <div class="pp-page-head"><b>หน้าตราประทับ</b><span id="ppCount"></span></div>
     <div class="stamp-grid" id="stampGrid"></div>
   </div>
   <div class="pp-done" id="ppDone" hidden></div>
+  <button class="btn ghost share-btn" type="button" data-act="share" id="ppShare" hidden>${download}<span>บันทึกรูปสมุดตรา · แชร์ลงโซเชียล</span></button>
   <p class="sync-note" id="syncNote" hidden></p>
 </section>
 
@@ -218,6 +220,7 @@
     <b class="ce-kicker" id="ceKicker">ได้รับตราประทับ!</b>
     <h2 id="ceTitle"></h2>
     <p id="ceSub"></p>
+    <div class="ce-medal" id="ceMedal" hidden></div>
     <div class="ce-dots" id="ceDots" aria-hidden="true"></div>
     <div class="row">
       <button class="btn ghost" type="button" id="ceMore">สแกนต่อ</button>

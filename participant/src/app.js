@@ -8,6 +8,7 @@ import { stampHTML, finalSealHTML } from "./stamps.js";
 import { boothMapSVG, schoolMapSVG } from "./maps.js";
 import { loadBooths, logoUrl } from "../../shared/web/booths.js";
 import { coverArt, coverFor } from "./covers.js";
+import { medals, medalFor, medalSVG } from "./badges.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -255,6 +256,13 @@ function renderPassport() {
 
   $("#journey").innerHTML = `<div class="seg">${B.map((b) => `<i class="${S.stamps[b.id] ? (S.stamps[b.id].ok ? "on" : "on pending") : ""}" style="--c:${b.color}"></i>`).join("")}</div>
     <div class="seg-lab"><span>สะสมแล้ว <b>${n}</b> / ${ALL} บูธ</span><span>${n >= TOTAL ? "รับตั๋วลุ้นรางวัลได้แล้ว!" : `อีก ${TOTAL - n} ตรา ได้ตั๋วลุ้นรางวัล`}</span></div>`;
+
+  // milestone medals (5 / 10 / 15 / 20 / all)
+  $("#ppMedals").innerHTML = medals(ALL).map((m) => {
+    const got = n >= m.n;
+    return `<div class="medal${got ? " got" : ""}" title="${esc(m.th)}">${medalSVG(m, { locked: !got, size: 56 })}<b>${got ? esc(m.th) : `${m.n} ตรา`}</b></div>`;
+  }).join("");
+  $("#ppShare").hidden = n < 1;
 
   $("#ppCount").textContent = `${n} / ${ALL}`;
   $("#stampGrid").innerHTML = B.map((b) => {
@@ -605,6 +613,10 @@ function celebrate(b, offline = false) {
   $("#ceDots").innerHTML = B.map((x) => `<i class="${S.stamps[x.id] ? "on" : ""} ${x.id === b.id ? "new" : ""}" style="--c:${x.color}"></i>`).join("");
   $("#ceGo").innerHTML = n >= TOTAL ? `${icon("gift")}<span>รับตั๋วลุ้นรางวัล</span>` : `<span>ดูสมุดตรา</span>`;
   $("#ceMore").hidden = n >= TOTAL;
+  // just reached a milestone? show the medal
+  const m = medalFor(n, ALL), newMedal = m && m.n === n;
+  $("#ceMedal").hidden = !newMedal;
+  if (newMedal) $("#ceMedal").innerHTML = `${medalSVG(m, { size: 64 })}<div><small>ปลดล็อกเหรียญใหม่!</small><b>${esc(m.th)}</b><span>${m.n === ALL ? "สะสมครบทุกบูธ" : `สะสมครบ ${m.n} ตรา`} · กดบันทึกรูปสมุดตราไว้แชร์ได้</span></div>`;
   ce.hidden = false;
   requestAnimationFrame(() => requestAnimationFrame(() => slot.classList.add("slam")));
   setTimeout(() => {
@@ -615,6 +627,7 @@ function celebrate(b, offline = false) {
     const r = slot.getBoundingClientRect();
     burst(r.left + r.width / 2, r.top + r.height / 2, n >= TOTAL ? 160 : 90, n >= TOTAL ? 1.2 : 0.9);
     if (n >= TOTAL) { setTimeout(() => { fireworks(2200); sfx.win(); }, 500); }
+    else if (newMedal) { setTimeout(() => { fireworks(1200); sfx.win(); buzz([30, 50, 30]); }, 650); }
   }, 400);
   render();
 }
@@ -647,6 +660,34 @@ function watchRedeem(restart = true) {
 document.addEventListener("visibilitychange", () => { if (!document.hidden && view === "prize") watchRedeem(); });
 document.addEventListener("pointerdown", () => { if (view === "prize" && Date.now() - watchFrom > 2 * 60e3) watchRedeem(); }, { passive: true });
 
+// ---------------------------------------------------------------- share picture of the passport
+let shareFile = null, shareUrl = "";
+async function openShare() {
+  if (!S.pass) return;
+  openSheet(`<h2>รูปสมุดตราของฉัน</h2><div class="share-wait"><i class="spin"></i>กำลังสร้างรูป…</div>`);
+  try {
+    const { shareCard } = await import("./share.js");
+    const blob = await shareCard({ pass: S.pass, stamps: S.stamps, booths: B, cover: coverFor(S.pass.id), total: TOTAL });
+    if (!blob) throw new Error("no image");
+    if (shareUrl) URL.revokeObjectURL(shareUrl);
+    shareUrl = URL.createObjectURL(blob);
+    shareFile = new File([blob], "tggc2026-geo-passport.jpg", { type: "image/jpeg" });
+    const canShare = !!(navigator.canShare && navigator.canShare({ files: [shareFile] }));
+    $("#sheetBody").innerHTML = `<h2>รูปสมุดตราของฉัน</h2>
+      <img class="share-img" src="${shareUrl}" alt="รูปสมุดสะสมตราของฉัน">
+      <div class="row">${canShare ? `<button class="btn" type="button" data-act="share-go">${icon("sparkle")}<span>แชร์ / บันทึกรูป</span></button>` : ""}
+        <a class="btn ${canShare ? "ghost" : ""}" href="${shareUrl}" download="tggc2026-geo-passport.jpg">${icon("download")}<span>ดาวน์โหลด</span></a></div>
+      <p class="hint center">iPhone/iPad: กดค้างที่รูป แล้วเลือก "บันทึกลงในรูปภาพ" · ขนาดพอดีสตอรี่ IG / Facebook</p>`;
+  } catch {
+    $("#sheetBody").innerHTML = `<h2>รูปสมุดตราของฉัน</h2><p>สร้างรูปไม่สำเร็จ ลองใหม่อีกครั้ง หรือแคปหน้าจอสมุดตราแทน</p><button class="btn ghost" type="button" data-close>ปิด</button>`;
+  }
+}
+async function shareGo() {
+  if (!shareFile) return;
+  try { await navigator.share({ files: [shareFile], title: "สมุดสะสมตรา TGGC 2026", text: `ฉันสะสมตราได้ ${count()}/${ALL} บูธ ที่งาน TGGC 2026! มาสะสมด้วยกัน ${EVENT.participantUrl}` }); }
+  catch { /* cancelled */ }
+}
+
 // ---------------------------------------------------------------- my QR
 async function showMyQR() {
   openSheet(`<h2>QR ของฉัน</h2><p style="margin:0;color:var(--muted)">ให้เจ้าหน้าที่สแกน กรณีมือถือสแกน QR ของบูธไม่ได้ หรือเพื่อตรวจสอบสิทธิ์</p><div class="qr-box" id="myQr"></div><div class="center"><div class="big-id">${esc(S.pass.id)}</div><div>${esc(S.pass.name)}</div></div>`);
@@ -661,6 +702,8 @@ document.addEventListener("click", (e) => {
     const act = a.dataset.act;
     if (act === "scan") { closeSheet(); openScanner("booth"); }
     if (act === "myqr") showMyQR();
+    if (act === "share") openShare();
+    if (act === "share-go") shareGo();
     return;
   }
   const fo = e.target.closest("[data-focus]");
