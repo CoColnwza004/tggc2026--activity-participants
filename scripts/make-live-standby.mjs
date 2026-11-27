@@ -19,8 +19,7 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const out = root + "poster/live/";
 mkdirSync(out + "canva", { recursive: true });
 
-const PAGE_TH = "โรงเรียนชลประทานวิทยา";
-const PAGE_EN = "Chonprathanwittaya School";
+const PAGE = "CPW - geolympiad"; // Facebook page that carries the stream
 
 const globeJs = (await build({
   stdin: { contents: `import { createGlobe } from "./participant/src/globe.js";
@@ -134,7 +133,7 @@ const html = (S) => `<!doctype html><html lang="th"><head><meta charset="utf-8">
     <div class="ev"><p data-t>การแข่งขันอัจฉริยภาพทางด้านภูมิศาสตร์และภูมิสารสนเทศแห่งประเทศไทย<br>ระดับมัธยมศึกษา ครั้งที่ 3 พ.ศ. 2569</p></div>
     <div class="info"><div class="chip d">${cal}<span data-t>${EVENT.dateText}</span></div><div class="chip">${pin}<span data-t>${EVENT.venue} ${EVENT.venueSub}</span></div></div>
   </div>
-  <div class="fb">${fb}<div><small data-t>${S.fb}</small><b data-t>${PAGE_TH}</b><span data-t>${PAGE_EN}</span></div></div>
+  <div class="fb">${fb}<div><small data-t>${S.fb}</small><b data-t>${PAGE}</b></div></div>
   <div class="bar"><span data-t>The 3rd Thailand Geography Genius Challenge 2026 (TGGC2026)</span></div>
 </div><script>${globeJs}</script></body></html>`;
 

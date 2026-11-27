@@ -103,7 +103,7 @@ const html = `<!doctype html><html lang="th"><head><meta charset="utf-8">
 <div class="head"><div class="logo"><img data-img="assets-src/logo-full.png" src="${uri("assets-src/logo-full.png")}" alt=""></div>
   <div class="live"><i></i><span data-t>LIVE</span></div>
   <div class="ttl"><small data-t>The 3rd Thailand Geography Genius Challenge 2026</small><b data-t>การแข่งขันอัจฉริยภาพทางด้านภูมิศาสตร์และภูมิสารสนเทศแห่งประเทศไทย ครั้งที่ 3</b></div></div>
-<div class="fb">${fb}<div><small data-t>Facebook Live</small><b data-t>โรงเรียนชลประทานวิทยา</b></div></div>
+<div class="fb">${fb}<div><small data-t>Facebook Live</small><b data-t>CPW - geolympiad</b></div></div>
 <div class="partners"><small data-t>ร่วมจัดโดย · Partners</small>${partners}</div>
 <img class="geos" data-img="assets-src/geos-hd.png" src="${uri("assets-src/geos-hd.png")}" alt="">
 <i class="spark" style="right:330px;bottom:230px"></i><i class="spark" style="right:40px;bottom:300px;transform:scale(.6)"></i>

@@ -74,7 +74,7 @@ const html = (full) => `<!doctype html><html lang="th"><head><meta charset="utf-
     <div class="live"><i></i><em data-t>LIVE</em> <span data-t>ถ่ายทอดสด</span></div></div>
   ${full ? `<div class="partners">${partners}</div>
   <div class="bar"><span data-t>The 3rd Thailand Geography Genius Challenge 2026 (TGGC2026)</span></div>
-  <div class="fb">${fb}<div><small data-t>Facebook Live</small><b data-t>โรงเรียนชลประทานวิทยา</b></div></div>` : ""}
+  <div class="fb">${fb}<div><small data-t>Facebook Live</small><b data-t>CPW - geolympiad</b></div></div>` : ""}
 </div><script>document.fonts.ready.then(() => setTimeout(() => (window.__ready = true), 300))</script></body></html>`;
 
 const b = await chromium.launch();
