@@ -42,6 +42,7 @@ function applyServer(j) {
   S.redeem = j.redeem || null;
   S.synced = Date.now();
   save();
+  if ("ann" in j) applyAnn(j.ann);
 }
 
 // ---------------------------------------------------------------- api
@@ -77,6 +78,7 @@ function demoApi(path, data) {
   };
   if (path === "/api/join") { D.id = D.id || "G" + Math.random().toString(36).slice(2, 8).toUpperCase().replace(/[01IO]/g, "7"); D.stamps = D.stamps || {}; return out(); }
   if (path === "/api/me") return out();
+  if (path === "/api/announce") return Promise.resolve({ ok: true, ann: JSON.parse(localStorage.getItem("tggc-demo-ann") || "null") });
   const p = parsePayload(data && data.c);
   if (!p) return Promise.reject(Object.assign(new Error("รหัสไม่ถูกต้อง"), { code: "code" }));
   if (path === "/api/stamp") {
@@ -292,7 +294,8 @@ function renderPrize() {
     return;
   }
   if (S.redeem) {
-    body.innerHTML = redeemedHTML(S.redeem) + rail;
+    body.innerHTML = annCard() + redeemedHTML(S.redeem) + notifCard() + rail;
+    askNotifOnce();
     if (S.seenRedeem !== S.redeem.at) { // celebrate once on this phone
       S.seenRedeem = S.redeem.at; save();
       sfx.win(); buzz([40, 60, 40, 60, 120]); fireworks(3000); burst(innerWidth / 2, innerHeight * 0.35, 140, 1.2);
@@ -320,9 +323,11 @@ function renderPrize() {
       <img class="tk-geos" src="assets/geos-front.webp" alt="" width="118" height="156">
     </div>
     <p class="tk-wait"><i class="live-dot"></i>รอเจ้าหน้าที่สแกน… หน้านี้จะอัปเดตเอง</p>
+    ${annCard()}${notifCard()}
     <ol class="steps2"><li><b>1</b><span>ไปที่ <strong>${esc(EVENT.prizePoint.name)}</strong> · ${esc(EVENT.prizePoint.place)}</span></li><li><b>2</b><span>ยื่นตั๋วนี้ให้เจ้าหน้าที่สแกน QR (เพิ่มความสว่างหน้าจอด้วยนะ) · 1 คน ใช้ได้ 1 ครั้ง</span></li><li><b>3</b><span><strong>${esc(EVENT.raffle.slip)}จับฉลาก</strong> · ${esc(EVENT.raffle.announce)}</span></li></ol></div>${rail}`;
   import("../../shared/web/qr.js").then(({ qrSvg }) => qrSvg("GEOS-TICKET:" + p.id, { margin: 1 })).then((svg) => { const el = $("#ticketQr"); if (el) el.innerHTML = svg; }).catch(() => {});
   watchRedeem();
+  askNotifOnce();
 }
 
 function redeemedHTML(r) {
@@ -348,8 +353,8 @@ function renderTimeline(onlyIfChanged = false) {
   $("#timeline").innerHTML = EVENT.schedule.map((s) => {
     const a = at(s.t), b = at(s.e);
     const cls = now >= a && now < b ? "now" : now >= b ? "past" : "";
-    return `<li class="${cls}" style="--c:${color[s.tag] || "#0a98c7"}"><div class="tm">${s.t}<small>${s.e}</small></div><i class="dot"></i>
-      <div class="ev"><span class="tag">${label[s.tag] || ""}</span>${cls === "now" ? '<span class="live"><i class="live-dot"></i>กำลังดำเนินการ</span>' : ""}<b>${esc(s.title)}</b><span class="pl">${icon("place")}${esc(s.place)}</span></div></li>`;
+    return `<li class="${cls}" style="--c:${color[s.tag] || "#0a98c7"}"><div class="tm">${s.t}<small>${s.eLabel || s.e}</small></div><i class="dot"></i>
+      <div class="ev"><span class="tag">${label[s.tag] || ""}</span>${cls === "now" ? '<span class="live"><i class="live-dot"></i>กำลังดำเนินการ</span>' : ""}<b>${esc(s.title)}</b>${s.place ? `<span class="pl">${icon("place")}${esc(s.place)}</span>` : ""}</div></li>`;
   }).join("");
 }
 
@@ -461,6 +466,7 @@ addEventListener("hashchange", route);
 
 function render() {
   renderTop();
+  renderAnnBar();
   if (view === "home") renderHome();
   if (view === "passport") renderPassport();
   if (view === "prize") renderPrize();
@@ -712,6 +718,135 @@ async function shareGo() {
   catch { /* cancelled */ }
 }
 
+// ---------------------------------------------------------------- raffle announcements (from the prize counter staff)
+const annLine = (a) => [a.time ? `เวลา ${a.time} น.` : "", a.place ? `ที่ ${a.place}` : "", a.msg].filter(Boolean).join(" · ");
+const annLive = (a) => !!a && Date.now() - a.at < 12 * 3600e3;
+function applyAnn(a) {
+  const was = S.ann ? S.ann.id : 0;
+  S.ann = a || null;
+  save();
+  if ((S.ann ? S.ann.id : 0) !== was) render();
+  // a new announcement: pop it up once (with sound + vibration), also when the phone comes back to the page
+  if (annLive(a) && a.id !== S.annSeen) { S.annSeen = a.id; save(); showAnn(a, true); }
+}
+function renderAnnBar() {
+  const bar = $("#annBar"), a = S.ann;
+  bar.hidden = !annLive(a);
+  if (bar.hidden) return;
+  bar.innerHTML = `<span class="ab-ic">${icon("megaphone")}</span><span class="ab-t"><b>${esc(a.title)}</b><small>${esc(annLine(a) || "แตะเพื่อดูรายละเอียด")}</small></span><span class="ab-go">ดู</span>`;
+}
+function annCard() {
+  const a = S.ann;
+  if (!annLive(a)) return "";
+  return `<button class="ann-card" type="button" data-act="ann"><span class="ac-ic">${icon("megaphone")}</span><span><small>ประกาศล่าสุด · ${fmtTime(a.at)}</small><b>${esc(a.title)}</b>${annLine(a) ? `<em>${esc(annLine(a))}</em>` : ""}</span></button>`;
+}
+function showAnn(a, fresh = false) {
+  openSheet(`<div class="ann-sheet${fresh ? " fresh" : ""}"><span class="as-ic">${icon("megaphone")}</span>
+    <small>ประกาศจาก${esc(EVENT.prizePoint.name)} · ${fmtTime(a.at)}</small>
+    <h2>${esc(a.title)}</h2>
+    <div class="meta">${a.time ? `<span>${icon("clock")}<b>เวลา ${esc(a.time)} น.</b></span>` : ""}${a.place ? `<span>${icon("place")}<b>${esc(a.place)}</b></span>` : ""}</div>
+    ${a.msg ? `<p class="as-msg">${esc(a.msg)}</p>` : ""}
+    <div class="row">${S.pass && count() >= TOTAL ? `<a class="btn green" href="#/prize" data-close>${icon("gift")}<span>ดูตั๋วของฉัน</span></a>` : ""}<button class="btn ghost" type="button" data-close>รับทราบ</button></div></div>`);
+  if (fresh) { sfx.win(); buzz([200, 100, 200, 100, 400]); }
+}
+let annAt = 0;
+async function pollAnn(force = false) {
+  if (document.hidden || (!force && Date.now() - annAt < 25000)) return;
+  annAt = Date.now();
+  try { applyAnn((await api("/api/announce")).ann); } catch { /* next time */ }
+}
+// people who collected everything wait for the raffle: check every 30 s while the page is open
+// (everyone else gets it with the normal passport refresh)
+setInterval(() => { if (S.pass && count() >= TOTAL) pollAnn(); }, 30000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && S.pass && count() >= TOTAL) pollAnn(); });
+
+// ---------------------------------------------------------------- notifications (asked only after all stamps)
+const UA = navigator.userAgent;
+const IOS = /iPad|iPhone|iPod/.test(UA) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const STANDALONE = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const INAPP = /\bLine\/|FBAN|FBAV|FB_IAB|Instagram|TikTok|musical_ly|; wv\)/i.test(UA);
+const NOTIF_WHY = "เมื่อเจ้าหน้าที่เคาน์เตอร์แลกรางวัลประกาศว่า<b>เริ่มจับรางวัลแล้ว และจับที่ไหน</b> มือถือของคุณจะเด้งแจ้งเตือนทันที แม้ปิดหน้าเว็บหรือล็อกหน้าจออยู่ จะได้ไปทันและไม่พลาดรางวัลถ้าชื่อคุณถูกจับ";
+const NOTIF_PROMISE = "ส่งเฉพาะประกาศเรื่องการจับรางวัลของงานนี้ · ไม่มีโฆษณา · ปิดได้ทุกเมื่อ";
+function notifState() {
+  if (DEMO) return S.notif === "on" ? "on" : "ask";
+  if (INAPP) return "inapp";
+  if (!("serviceWorker" in navigator && "PushManager" in window && "Notification" in window) || location.protocol !== "https:") return IOS && !STANDALONE ? "ios" : "unsupported";
+  if (Notification.permission === "denied") return "denied";
+  if (S.notif === "on" && Notification.permission === "granted") return "on";
+  return "ask";
+}
+const NOTIF_HELP = {
+  inapp: `เปิดจากแอป LINE/Facebook อยู่ ซึ่งแจ้งเตือนไม่ได้ · กด <b>⋮</b> หรือ <b>⋯</b> มุมขวา แล้วเลือก <b>"เปิดในเบราว์เซอร์"</b> (Chrome/Safari) แล้วกดเปิดการแจ้งเตือนอีกครั้ง`,
+  ios: `iPhone/iPad รับแจ้งเตือนจากเว็บได้เมื่อ<b>เพิ่มลงหน้าจอโฮม</b>: กดปุ่มแชร์ <b>⬆︎</b> → <b>"เพิ่มไปยังหน้าจอโฮม"</b> → เปิดจากไอคอนใหม่ → กรอกชื่อและเบอร์เดิม (ได้สมุดเล่มเดิม) → กดเปิดการแจ้งเตือน`,
+  denied: `การแจ้งเตือนของเว็บนี้ถูกปิดไว้ · เปิดได้ที่ไอคอน <b>🔒</b> ข้างช่องที่อยู่เว็บ → การแจ้งเตือน → อนุญาต แล้วกดปุ่มนี้อีกครั้ง`,
+  unsupported: `เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน ลองเปิดด้วย Chrome หรือ Safari`,
+};
+function notifCard() {
+  if (!S.pass || count() < TOTAL) return "";
+  const st = notifState();
+  if (st === "on") return `<div class="nt-card on"><span class="nt-ic">${icon("bell")}</span><div><b>เปิดการแจ้งเตือนแล้ว</b><small>จะแจ้งทันทีเมื่อเจ้าหน้าที่ประกาศจับรางวัล</small></div><button class="nt-off" type="button" data-act="notif-off">ปิด</button></div>`;
+  return `<div class="nt-card"><span class="nt-ic">${icon("bell")}</span><div><b>รับแจ้งเตือนเมื่อเริ่มจับรางวัล</b><small>${st === "ask" ? "ไม่พลาดตอนประกาศ แม้ปิดหน้าเว็บอยู่" : NOTIF_HELP[st]}</small></div>${st === "ask" || st === "denied" ? `<button class="btn" type="button" data-act="notif-ask">เปิด</button>` : ""}</div>`;
+}
+function askNotif() {
+  const st = notifState();
+  if (st === "on") return;
+  openSheet(`<div class="nt-ask"><span class="nt-big">${icon("bell")}</span>
+    <h2>เปิดการแจ้งเตือนการจับรางวัลไหม?</h2>
+    <p class="nt-lead">คุณสะสมครบทุกบูธแล้ว! มีสิทธิ์ลุ้นรางวัล</p>
+    <div class="nt-why"><small>ทำไมถึงขอสิทธิ์แจ้งเตือน</small><p>${NOTIF_WHY}</p></div>
+    <ul class="nt-list"><li>${icon("megaphone")}<span>แจ้งเมื่อ<b>เริ่มจับรางวัล</b> พร้อม<b>สถานที่</b>และเวลา</span></li><li>${icon("check")}<span>${NOTIF_PROMISE}</span></li></ul>
+    ${st === "ask" ? `<button class="btn green wide" type="button" data-act="notif-on">${icon("bell")}<span>อนุญาตการแจ้งเตือน</span></button>` : `<p class="nt-help">${NOTIF_HELP[st]}</p>${st === "denied" ? `<button class="btn wide" type="button" data-act="notif-on">ลองอีกครั้ง</button>` : ""}`}
+    <button class="btn ghost wide" type="button" data-act="notif-later">ไว้ทีหลัง</button>
+    <p class="nt-foot">ถ้าไม่เปิดก็ไม่เป็นไร · เปิดหน้าเว็บนี้ค้างไว้ ประกาศจะเด้งขึ้นบนจอให้เอง</p></div>`);
+}
+function askNotifOnce() {
+  if (S.notifAsked || !S.pass || count() < TOTAL || ["on", "denied"].includes(notifState())) return;
+  S.notifAsked = true; save();
+  setTimeout(() => { if (view === "prize" && $("#sheet").hidden && $("#celebrate").hidden) askNotif(); }, 900);
+}
+const fromB64u = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
+async function enablePush(btn) {
+  if (DEMO) { S.notif = "on"; save(); closeSheet(); render(); toast("เปิดการแจ้งเตือนแล้ว (โหมดทดลอง)"); return; }
+  if (notifState() !== "ask" && notifState() !== "denied") { askNotif(); return; }
+  btn.disabled = true;
+  try {
+    const perm = await Notification.requestPermission(); // must be the first thing after the tap
+    if (perm !== "granted") {
+      toast(perm === "denied" ? "ไม่ได้อนุญาตการแจ้งเตือน · เปิดภายหลังได้ที่ตั้งค่าเว็บไซต์" : "ยังไม่ได้อนุญาตการแจ้งเตือน", true);
+      closeSheet(); render(); return;
+    }
+    const reg = await Promise.race([
+      navigator.serviceWorker.register("/sw.js").then(() => navigator.serviceWorker.ready),
+      new Promise((_, no) => setTimeout(() => no(new Error("ระบบยังไม่พร้อม ลองใหม่อีกครั้ง")), 10000)),
+    ]);
+    const { key } = await api("/api/push/key");
+    const want = fromB64u(key);
+    let sub = await reg.pushManager.getSubscription();
+    const have = sub && sub.options && sub.options.applicationServerKey && new Uint8Array(sub.options.applicationServerKey);
+    if (sub && have && (have.length !== want.length || have.some((x, i) => x !== want[i]))) { await sub.unsubscribe(); sub = null; }
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: want });
+    await api("/api/push/sub", sub.toJSON());
+    S.notif = "on"; save();
+    closeSheet(); render();
+    toast("เปิดการแจ้งเตือนแล้ว 🔔 จะแจ้งเมื่อเริ่มจับรางวัล"); sfx.pop(); buzz(40);
+  } catch (e) {
+    toast(e.code ? e.message : "เปิดการแจ้งเตือนไม่สำเร็จ: " + (e.message || "ลองใหม่อีกครั้ง"), true);
+  } finally { btn.disabled = false; }
+}
+async function disablePush(btn) {
+  if (!confirm("ปิดการแจ้งเตือนการจับรางวัล?")) return;
+  btn.disabled = true;
+  try {
+    if (!DEMO) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = reg && (await reg.pushManager.getSubscription());
+      if (sub) await sub.unsubscribe().catch(() => {});
+      await api("/api/push/unsub", {});
+    }
+    S.notif = "off"; save(); render(); toast("ปิดการแจ้งเตือนแล้ว");
+  } catch (e) { toast(e.message, true); btn.disabled = false; }
+}
+
 // ---------------------------------------------------------------- my QR
 async function showMyQR() {
   openSheet(`<h2>QR ของฉัน</h2><p style="margin:0;color:var(--muted)">ให้เจ้าหน้าที่สแกน กรณีมือถือสแกน QR ของบูธไม่ได้ หรือเพื่อตรวจสอบสิทธิ์</p><div class="qr-box" id="myQr"></div><div class="center"><div class="big-id">${esc(S.pass.id)}</div><div>${esc(S.pass.name)}</div></div>`);
@@ -728,6 +863,11 @@ document.addEventListener("click", (e) => {
     if (act === "myqr") showMyQR();
     if (act === "share") openShare();
     if (act === "share-go") shareGo();
+    if (act === "ann") { if (S.ann) showAnn(S.ann); }
+    if (act === "notif-on") enablePush(a);
+    if (act === "notif-off") disablePush(a);
+    if (act === "notif-later") { closeSheet(); toast("เปิดได้ภายหลังที่หน้า \"ลุ้นรางวัล\""); }
+    if (act === "notif-ask") askNotif();
     return;
   }
   const fo = e.target.closest("[data-focus]");

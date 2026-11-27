@@ -6,6 +6,7 @@ import {
   json, fail, body, clientIp, master, passToken, passFromReq, verifyCode, bumpCount,
   newId, normName, clean, passportState, stampAndState, bumpIfChanged, redeemState, boothConfig, logoResponse,
 } from "../shared/server.js";
+import { currentAnn, vapidPublic, subscribe, unsubscribe } from "../shared/announce.js";
 
 const ROLES = new Set(["student", "teacher", "guest"]);
 
@@ -68,7 +69,7 @@ async function me(env, req) {
   if (!pid) return fail(401, "auth", "ไม่พบสมุดสะสมตรา");
   const state = await passportState(env, pid);
   if (!state) return fail(404, "gone", "ไม่พบสมุดสะสมตรา");
-  return json({ ok: true, ...state, now: Date.now() });
+  return json({ ok: true, ...state, ann: await currentAnn(env), now: Date.now() });
 }
 
 async function stamp(env, req) {
@@ -124,6 +125,16 @@ async function route(env, req, url) {
     }
     case "POST /api/stamp": return stamp(env, req);
     case "GET /api/ping": return json({ ok: true, now: Date.now() });
+    case "GET /api/announce": return json({ ok: true, ann: await currentAnn(env), now: Date.now() });
+    case "GET /api/push/key": return json({ ok: true, key: await vapidPublic(env) });
+    case "POST /api/push/sub":
+    case "POST /api/push/unsub": {
+      const pid = await passFromReq(env, req);
+      if (!pid) return fail(401, "auth", "ไม่พบสมุดสะสมตรา");
+      if (url.pathname.endsWith("/unsub")) { await unsubscribe(env, pid); return json({ ok: true }); }
+      const r = await subscribe(env, pid, await body(req));
+      return r.error ? fail(400, "push", r.error) : json({ ok: true });
+    }
     case "GET /api/booths": return json({ ok: true, ...(await boothConfig(env)), now: Date.now() });
   }
   return fail(404, "nf", "not found");

@@ -152,6 +152,8 @@ async function station(id) {
   $(".qr-stage").hidden = prize;
   $("#tkScan").hidden = !prize;
   $("#scanPassBtn").hidden = prize;
+  $("#anBox").hidden = !prize;
+  $("#anNow").hidden = true;
   keepAwake();
   if (!prize) {
     await tickQR();
@@ -212,6 +214,7 @@ async function refreshStation() {
     lastCount = j.count;
     $("#countNum").textContent = j.count.toLocaleString("th-TH");
     $("#countSub").textContent = "คน";
+    if (id === PRIZE) refreshAnn();
     $("#feed").innerHTML = id === PRIZE ? prizeFeed(j.recent) : (j.recent.length ? `<p class="feed-h">ล่าสุด</p>` : `<p class="feed-h">ยังไม่มีผู้รับตรา · รายชื่อจะขึ้นที่นี่</p>`) + j.recent.map((r) => `<div class="it"><b>${esc(r.name)}</b><time>${fmt(r.at)}</time><small>${esc(r.school || "")}${r.via && r.via.startsWith("staff") ? " · สแกนโดยเจ้าหน้าที่" : ""}</small></div>`).join("");
   } catch { /* offline: QR keeps working */ }
 }
@@ -331,6 +334,112 @@ $("#modalCard").addEventListener("click", (e) => {
   const d = e.target.closest("[data-redeem]");
   if (d) redeemFor(d.dataset.redeem, d);
 });
+
+// ---------------------------------------------------------------- prize counter: announce the raffle
+const AN_KINDS = [
+  { k: "soon", t: "เตรียมตัว! ใกล้เริ่มจับรางวัล", lab: "ใกล้เริ่ม" },
+  { k: "start", t: "เริ่มจับรางวัลแล้ว!", lab: "เริ่มจับแล้ว" },
+  { k: "winners", t: "ประกาศรายชื่อผู้โชคดี", lab: "ประกาศผล" },
+  { k: "custom", t: "", lab: "ข้อความอื่น" },
+];
+let AN = { ann: null, subs: 0, rows: 0, page: 100 }, anKind = "start";
+const anLine = (a) => [a.time ? `เวลา ${a.time} น.` : "", a.place ? `ที่ ${a.place}` : "", a.msg].filter(Boolean).join(" · ");
+async function refreshAnn() {
+  try { const j = await api("/api/announce"); AN = j; } catch { return; }
+  if (curStation !== PRIZE) return;
+  $("#anSub").textContent = `ขึ้นบนเว็บผู้เข้าร่วมทุกคน · แจ้งเตือนเข้ามือถือได้ ${AN.subs.toLocaleString("th-TH")} คน`;
+  const box = $("#anNow");
+  box.hidden = !AN.ann;
+  if (AN.ann) box.innerHTML = `<small>ประกาศอยู่ตอนนี้ · ${fmt(AN.ann.at)} น.${AN.ann.by ? " · โดย " + esc(AN.ann.by) : ""}</small><b>${esc(AN.ann.title)}</b>${anLine(AN.ann) ? `<span>${esc(anLine(AN.ann))}</span>` : ""}<button type="button" class="an-clear" data-anclear>ยกเลิกประกาศ</button>`;
+}
+function openAnn() {
+  const k = AN_KINDS.find((x) => x.k === anKind);
+  const a = AN.ann && AN.ann.kind === anKind ? AN.ann : null;
+  modal(`<div class="an-form"><h3>📣 ประกาศจับรางวัล</h3>
+    <p class="an-hint">ขึ้นเป็นป้ายประกาศบนเว็บของผู้เข้าร่วม และ<b>แจ้งเตือนเข้ามือถือ ${AN.subs.toLocaleString("th-TH")} คน</b>ที่สะสมครบและเปิดรับการแจ้งเตือน</p>
+    <div class="an-kinds">${AN_KINDS.map((x) => `<button type="button" class="${x.k === anKind ? "on" : ""}" data-ankind="${x.k}">${x.lab}</button>`).join("")}</div>
+    <label class="field"><span>หัวข้อ</span><input class="input" id="anTitle" maxlength="80" value="${esc(a ? a.title : k.t)}" placeholder="เช่น เลื่อนเวลาจับรางวัล"></label>
+    <label class="field"><span>สถานที่จับรางวัล${anKind === "start" || anKind === "soon" ? " *" : ""}</span><input class="input" id="anPlace" maxlength="120" value="${esc(a ? a.place : (AN.ann && AN.ann.place) || "")}" placeholder="แตะปุ่มด้านล่าง หรือพิมพ์เอง"></label>
+    <div class="an-places">${(EVENT.raffle.places || []).map((p) => `<button type="button" data-anplace="${esc(p)}">${esc(p)}</button>`).join("")}</div>
+    <div class="an-two"><label class="field"><span>เวลา (ถ้ามี)</span><input class="input" id="anTime" type="time" value="${esc(a ? a.time : "")}"></label>
+      <label class="field"><span>ข้อความเพิ่มเติม (ถ้ามี)</span><input class="input" id="anMsg" maxlength="200" value="${esc(a ? a.msg : "")}" placeholder="เช่น นำตั๋วในมือถือมาด้วย"></label></div>
+    <label class="an-check"><input type="checkbox" id="anPush" ${AN.subs ? "checked" : "disabled"}><span>ส่งแจ้งเตือนเข้ามือถือ (${AN.subs.toLocaleString("th-TH")} คน)</span></label>
+    <div class="an-prev" id="anPrev"></div>
+    <p class="err" id="anErr" hidden></p>
+    <button class="btn gold wide" type="button" id="anSend">📣 ส่งประกาศ</button>
+    <button class="btn ghost wide" type="button" data-mclose>ยกเลิก</button></div>`);
+  anPreview();
+}
+function anPreview() {
+  const v = { title: $("#anTitle").value.trim(), place: $("#anPlace").value.trim(), time: $("#anTime").value, msg: $("#anMsg").value.trim() };
+  $("#anPrev").innerHTML = `<small>ตัวอย่างการแจ้งเตือนบนมือถือ</small><div class="an-noti"><img src="assets/icon-192.png" alt=""><div><b>📣 ${esc(v.title || "หัวข้อประกาศ")}</b><span>${esc(anLine(v) || "แตะเพื่อดูรายละเอียดการจับรางวัล")}</span></div></div>`;
+}
+async function sendAnn(btn) {
+  const v = { kind: anKind, title: $("#anTitle").value.trim(), place: $("#anPlace").value.trim(), time: $("#anTime").value, msg: $("#anMsg").value.trim() };
+  const push = $("#anPush").checked;
+  const err = $("#anErr");
+  err.hidden = true;
+  if (!v.title) { err.textContent = "กรุณาใส่หัวข้อ"; err.hidden = false; return; }
+  if ((anKind === "start" || anKind === "soon") && !v.place) { err.textContent = "กรุณาระบุสถานที่จับรางวัล"; err.hidden = false; return; }
+  if (!confirm(`ส่งประกาศ "${v.title}"${push ? ` และแจ้งเตือนเข้ามือถือ ${AN.subs} คน` : ""}?`)) return;
+  btn.disabled = true; btn.textContent = "กำลังส่ง…";
+  let j;
+  try { j = await api("/api/announce", v); }
+  catch (e) { err.textContent = e.message; err.hidden = false; btn.disabled = false; btn.textContent = "📣 ส่งประกาศ"; return; }
+  AN = { ...AN, ann: j.ann, subs: j.subs, rows: j.rows };
+  sfx.win(); buzz([40, 60, 120]);
+  if (!push || !j.rows) { annDone(j.ann, null); return; }
+  // notify phone by phone, a few pages at a time (each page = one request to our server)
+  const pages = Math.ceil(j.rows / j.page), tot = { sent: 0, failed: 0, gone: 0, done: 0 };
+  modal(`<div class="an-sending"><h3>📣 ประกาศแล้ว</h3><p>กำลังส่งแจ้งเตือนเข้ามือถือ…</p><div class="an-bar"><i id="anBarFill"></i></div><b id="anProg">0 / ${j.subs}</b></div>`);
+  let next = 0;
+  async function worker() {
+    while (next < pages) {
+      const pg = next++;
+      for (let tries = 0; tries < 3; tries++) {
+        try {
+          const r = await api("/api/announce/push", { id: j.ann.id, page: pg });
+          tot.sent += r.sent; tot.failed += r.failed; tot.gone += r.gone;
+          break;
+        } catch { if (tries === 2) tot.failed += Math.min(j.page, j.rows - pg * j.page); }
+      }
+      tot.done++;
+      const f = $("#anBarFill"); if (f) f.style.width = (100 * tot.done / pages) + "%";
+      const pr = $("#anProg"); if (pr) pr.textContent = `${tot.sent} / ${j.subs}`;
+    }
+  }
+  await Promise.all([worker(), worker(), worker()]);
+  annDone(j.ann, tot);
+}
+function annDone(a, tot) {
+  modal(`<div class="an-sending"><h3>✓ ส่งประกาศแล้ว</h3><div class="an-done"><b>${esc(a.title)}</b>${anLine(a) ? `<span>${esc(anLine(a))}</span>` : ""}</div>
+    ${tot ? `<p>แจ้งเตือนเข้ามือถือสำเร็จ <b>${tot.sent.toLocaleString("th-TH")}</b> คน${tot.failed ? ` · ไม่สำเร็จ ${tot.failed}` : ""}${tot.gone ? ` · ปิดรับแล้ว ${tot.gone}` : ""}</p>` : `<p>ขึ้นป้ายประกาศบนเว็บผู้เข้าร่วมแล้ว (ไม่ได้ส่งแจ้งเตือนเข้ามือถือ)</p>`}
+    <p class="an-hint">ผู้ที่เปิดเว็บอยู่จะเห็นประกาศเด้งขึ้นภายในประมาณ 30 วินาที</p>
+    <button class="btn wide" type="button" data-mclose>เสร็จ</button></div>`);
+  refreshAnn();
+}
+$("#anBtn").onclick = () => { openAnn(); refreshAnn().then(() => { if (!$("#modal").hidden && $("#anTitle")) { const c = $("#anPush"); if (c && AN.subs && c.disabled) { c.disabled = false; c.checked = true; } } }); };
+$("#anNow").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-anclear]");
+  if (!b || !confirm("ยกเลิกประกาศนี้? (ป้ายประกาศจะหายจากเว็บผู้เข้าร่วม · ไม่ส่งแจ้งเตือน)")) return;
+  b.disabled = true;
+  try { await api("/api/announce/clear", {}); toast("ยกเลิกประกาศแล้ว"); refreshAnn(); }
+  catch (ex) { toast(ex.message, true); b.disabled = false; }
+});
+$("#modalCard").addEventListener("click", (e) => {
+  const k = e.target.closest("[data-ankind]");
+  if (k) {
+    const prev = AN_KINDS.find((x) => x.k === anKind), t = $("#anTitle");
+    anKind = k.dataset.ankind;
+    $$("[data-ankind]").forEach((b) => b.classList.toggle("on", b === k));
+    if (!t.value.trim() || t.value === prev.t) t.value = AN_KINDS.find((x) => x.k === anKind).t; // keep a title typed by hand
+    anPreview(); return;
+  }
+  const pl = e.target.closest("[data-anplace]");
+  if (pl) { $("#anPlace").value = pl.dataset.anplace; anPreview(); return; }
+  if (e.target.closest("#anSend")) sendAnn(e.target.closest("#anSend"));
+});
+$("#modalCard").addEventListener("input", (e) => { if (e.target.closest(".an-form")) anPreview(); });
 
 // ---------------------------------------------------------------- lookup
 function lookup() { show("lookup"); }

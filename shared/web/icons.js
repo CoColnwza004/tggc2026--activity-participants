@@ -40,6 +40,8 @@ const P = {
   camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
   pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+  bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  megaphone: '<path d="M3 10v4l3 .5V9.5z"/><path d="M6 9.5 17 5v14L6 14.5"/><path d="M8 15l1.5 5h3L11 15.8"/><path d="M20 9.5a3 3 0 0 1 0 5"/>',
 };
 
 export const icon = (name, cls = "") =>

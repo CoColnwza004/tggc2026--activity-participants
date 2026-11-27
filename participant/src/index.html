@@ -33,6 +33,7 @@
 </header>
 
 <main class="app" id="app">
+<button class="ann-bar" id="annBar" type="button" data-act="ann" hidden></button>
 
 <!-- ================= HOME ================= -->
 <section class="view" data-view="home">
@@ -150,7 +151,7 @@
     <a role="tab" href="#/program/booths" data-tab="booths">บูธ</a>
     <a role="tab" href="#/program/geos" data-tab="geos">น้องจีออส</a>
   </div>
-  <div class="tab-panel" data-panel="schedule"><ol class="timeline" id="timeline"></ol></div>
+  <div class="tab-panel" data-panel="schedule"><ol class="timeline" id="timeline"></ol><p class="tl-note">หมายเหตุ: กำหนดการอาจเปลี่ยนแปลงได้ตามความเหมาะสม</p></div>
   <div class="tab-panel" data-panel="map" hidden><div class="map-card" id="mapCard"></div><h3 class="sub-h">รายชื่อบูธ</h3><ul class="legend" id="mapLegend"></ul><h3 class="sub-h">แผนผังโรงเรียน</h3><div id="schoolMap"></div></div>
   <div class="tab-panel" data-panel="booths" hidden><div class="booth-list" id="boothList"></div></div>
   <div class="tab-panel" data-panel="geos" hidden>

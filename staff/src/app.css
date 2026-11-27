@@ -280,3 +280,43 @@ a { color: var(--mist); }
   .st-side { align-self: center; max-width: 440px; }
   .feed { max-height: 46vh; }
 }
+
+/* ---------- prize counter: raffle announcement ---------- */
+.an-box { display: grid; gap: 8px; }
+.an-btn { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; text-align: left; padding: 14px 16px; border-radius: 18px; border: 0; cursor: pointer; color: #2b1300; font: inherit;
+  background: linear-gradient(120deg, #f08a1c, var(--gold)); box-shadow: 0 10px 24px rgba(240, 138, 28, .28); }
+.an-btn span { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: rgba(255, 255, 255, .35); }
+.an-btn b { font-family: var(--f-display); font-size: 18px; }
+.an-btn small { font-size: 13px; opacity: .85; line-height: 1.4; }
+.an-btn:active { transform: scale(.98); }
+.an-now { display: grid; gap: 2px; padding: 12px 14px; border-radius: 16px; border: 1px solid rgba(240, 138, 28, .5); background: rgba(240, 138, 28, .12); }
+.an-now small { color: #ffc98a; font-size: 12.5px; }
+.an-now b { font-family: var(--f-display); font-size: 17px; }
+.an-now span { font-size: 14px; color: var(--muted); }
+.an-clear { justify-self: start; margin-top: 4px; padding: 4px 12px; border-radius: 99px; border: 1px solid var(--line); background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.an-form { display: grid; gap: 10px; }
+.an-form h3, .an-sending h3 { margin: 0; font-family: var(--f-display); font-size: 22px; }
+.an-hint { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+.an-kinds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.an-kinds button, .an-places button { padding: 9px 6px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255, 255, 255, .05); color: var(--text); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; line-height: 1.3; }
+.an-kinds button.on { background: linear-gradient(120deg, #f08a1c, var(--gold)); color: #2b1300; border-color: transparent; }
+.an-places { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -4px; }
+.an-places button { padding: 6px 10px; font-weight: 400; font-size: 12.5px; text-align: left; }
+.an-two { display: grid; grid-template-columns: 130px 1fr; gap: 8px; }
+.an-check { display: flex; gap: 10px; align-items: center; font-size: 14.5px; }
+.an-check input { width: 20px; height: 20px; accent-color: #f08a1c; }
+.an-prev small { font-size: 12px; color: var(--muted); }
+.an-noti { display: flex; gap: 10px; align-items: flex-start; margin-top: 4px; padding: 10px 12px; border-radius: 16px; background: rgba(255, 255, 255, .92); color: #10222e; }
+.an-noti img { width: 34px; height: 34px; border-radius: 9px; }
+.an-noti div { display: grid; min-width: 0; }
+.an-noti b { font-size: 14px; }
+.an-noti span { font-size: 13px; color: #3c5562; }
+.an-sending { display: grid; gap: 10px; text-align: center; }
+.an-sending p { margin: 0; }
+.an-bar { height: 10px; border-radius: 99px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.an-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f08a1c, var(--gold)); transition: width .3s; }
+.an-done { display: grid; gap: 2px; padding: 12px; border-radius: 14px; background: rgba(240, 138, 28, .12); }
+.an-done b { font-family: var(--f-display); font-size: 18px; }
+.an-done span { font-size: 14px; color: var(--muted); }
+.modal-card:has(.an-form) { width: min(560px, 100%); max-height: calc(100vh - 32px); overflow: auto; }
+@media (max-width: 420px) { .an-kinds { grid-template-columns: repeat(2, 1fr); } .an-two { grid-template-columns: 1fr; } }

@@ -67,3 +67,28 @@ self.addEventListener("fetch", (e) => {
     );
   }
 });
+
+// ---------- raffle announcements (Web Push) ----------
+// the push carries no data: read the current announcement from the server and show it
+const ICON = PRECACHE.find((p) => p.includes("icon-192")) || "/favicon.ico";
+self.addEventListener("push", (e) => {
+  e.waitUntil((async () => {
+    let a = null;
+    try { a = (await (await fetch("/api/announce", { cache: "no-store" })).json()).ann; } catch { /* show a generic one */ }
+    const body = a ? [a.time ? `เวลา ${a.time} น.` : "", a.place ? `ที่ ${a.place}` : "", a.msg].filter(Boolean).join(" · ") : "";
+    await self.registration.showNotification(a ? "📣 " + a.title : "📣 ประกาศจากเคาน์เตอร์แลกรางวัล", {
+      body: body || "แตะเพื่อดูรายละเอียดการจับรางวัล",
+      icon: ICON, badge: ICON, tag: "tggc-raffle", renotify: true, requireInteraction: true,
+      vibrate: [200, 100, 200, 100, 400], data: { url: "/#/prize", id: a && a.id },
+    });
+  })());
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "/#/prize";
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    const w = list.find((c) => new URL(c.url).origin === location.origin);
+    if (w) { w.navigate(url).catch(() => {}); return w.focus(); }
+    return self.clients.openWindow(url);
+  }));
+});
