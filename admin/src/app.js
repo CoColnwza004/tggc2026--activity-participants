@@ -62,7 +62,7 @@ function route() {
   $("#login").hidden = true; $("#app").hidden = false;
   $("#who").textContent = A.name;
   tab = (location.hash.match(/^#\/(\w+)/) || [])[1] || "dash";
-  if (!["dash", "booths", "tickets", "data"].includes(tab)) tab = "dash";
+  if (!["dash", "booths", "tickets", "people", "data"].includes(tab)) tab = "dash";
   $$("[data-view]").forEach((v) => (v.hidden = v.dataset.view !== tab));
   $$(".tabs a").forEach((a) => a.classList.toggle("on", a.dataset.tab === tab));
   load();
@@ -74,6 +74,7 @@ function load(quiet) {
   if (tab === "dash") return loadDash(quiet);
   if (tab === "booths") return loadBooths();
   if (tab === "tickets") return loadTickets();
+  if (tab === "people") return loadPeople();
   if (tab === "data") return renderData();
 }
 const stamp = () => ($("#upd").textContent = "อัปเดต " + hhmm(Date.now()));
@@ -331,6 +332,69 @@ $("#tlist").addEventListener("click", async (e) => {
   b.disabled = true;
   try { await api("/api/admin/unredeem", { pid: b.dataset.unredeem }); toast("ยกเลิกแล้ว"); loadTickets(); } catch (ex) { toast(ex.message, true); b.disabled = false; }
 });
+
+// ---------------------------------------------------------------- people (select + delete test entries)
+let PP = [];
+const PSEL = new Set();
+const EVENT_DAY = new Date(EVENT.start.slice(0, 10) + "T00:00:00+07:00").getTime(); // midnight Thai time, event day
+const ROLE_TH = Object.fromEntries(ROLE.map(([k, t]) => [k, t]));
+const dt = (ms) => new Date(ms).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" });
+async function loadPeople() {
+  try {
+    PP = (await api("/api/admin/passports")).list;
+    for (const id of [...PSEL]) if (!PP.some((p) => p.id === id)) PSEL.delete(id);
+    stamp(); renderPeople();
+  } catch (ex) { toast(ex.message, true); }
+}
+function shownPeople() {
+  const q = $("#pq").value.trim().toLowerCase();
+  return q ? PP.filter((p) => [p.name, p.school, p.phone, p.id].some((v) => String(v || "").toLowerCase().includes(q))) : PP;
+}
+function renderPeople() {
+  const list = shownPeople(), show = list.slice(0, 500);
+  const before = PP.filter((p) => p.created < EVENT_DAY).length;
+  $("#pBefore").textContent = `เลือกที่สมัครก่อนวันงาน (${fmtN(before)})`;
+  $("#pBefore").disabled = !before;
+  $("#pAll").checked = !!show.length && show.every((p) => PSEL.has(p.id));
+  $("#pAll").indeterminate = !$("#pAll").checked && show.some((p) => PSEL.has(p.id));
+  $("#pAllTxt").textContent = `เลือกทั้งหมดที่แสดง (${fmtN(show.length)})`;
+  $("#pInfo").textContent = `ทั้งหมด ${fmtN(PP.length)} คน${list.length !== PP.length ? ` · พบ ${fmtN(list.length)}` : ""} · เลือก ${fmtN(PSEL.size)}`;
+  $("#pDel").disabled = !PSEL.size;
+  $("#pDel").textContent = PSEL.size ? `ลบที่เลือก (${fmtN(PSEL.size)})` : "ลบที่เลือก";
+  $("#plist").innerHTML = show.map((p) => `<label class="pr${PSEL.has(p.id) ? " on" : ""}">
+      <input type="checkbox" data-pid="${esc(p.id)}"${PSEL.has(p.id) ? " checked" : ""}>
+      <div class="pm"><b>${esc(p.name)}</b><small>${esc([p.school, ROLE_TH[p.role] || p.role, p.phone].filter(Boolean).join(" · "))}</small></div>
+      <div class="pt"><span class="chip${p.n >= REQUIRED ? " full" : ""}">${p.n}/${ALL} ตรา</span>${p.redeemed ? `<span class="chip gold">ยื่นตั๋วแล้ว</span>` : ""}
+        <small><code>${esc(p.id)}</code> · สมัคร ${dt(p.created)}${p.created < EVENT_DAY ? ` <em>ก่อนวันงาน</em>` : ""}</small></div></label>`).join("")
+    + (list.length > 500 ? `<p class="sub">แสดง 500 รายการแรก พิมพ์ค้นหาเพื่อกรอง</p>` : "")
+    + (!PP.length ? `<p class="empty">ยังไม่มีผู้ลงทะเบียน</p>` : !list.length ? `<p class="empty">ไม่พบรายการที่ค้นหา</p>` : "");
+}
+$("#pq").addEventListener("input", renderPeople);
+$("#plist").addEventListener("change", (e) => {
+  const c = e.target.closest("[data-pid]"); if (!c) return;
+  c.checked ? PSEL.add(c.dataset.pid) : PSEL.delete(c.dataset.pid);
+  renderPeople();
+});
+$("#pAll").addEventListener("change", (e) => {
+  for (const p of shownPeople().slice(0, 500)) e.target.checked ? PSEL.add(p.id) : PSEL.delete(p.id);
+  renderPeople();
+});
+$("#pBefore").onclick = () => { for (const p of PP) if (p.created < EVENT_DAY) PSEL.add(p.id); renderPeople(); };
+$("#pNone").onclick = () => { PSEL.clear(); renderPeople(); };
+$("#pDel").onclick = async () => {
+  const sel = PP.filter((p) => PSEL.has(p.id));
+  if (!sel.length) return;
+  const names = sel.slice(0, 8).map((p) => "• " + p.name).join("\n") + (sel.length > 8 ? `\n… และอีก ${sel.length - 8} คน` : "");
+  const withTicket = sel.filter((p) => p.redeemed).length;
+  if (!confirm(`ลบผู้ลงทะเบียน ${sel.length} คน พร้อมตราและตั๋วของคนเหล่านี้?\n\n${names}${withTicket ? `\n\n⚠️ มี ${withTicket} คนที่ยื่นตั๋วแล้ว` : ""}\n\nย้อนกลับไม่ได้`)) return;
+  $("#pDel").disabled = true;
+  try {
+    const j = await api("/api/admin/passports/delete", { ids: sel.map((p) => p.id) });
+    PSEL.clear();
+    toast(`ลบแล้ว ${fmtN(j.deleted)} คน`);
+    loadPeople();
+  } catch (ex) { toast(ex.message, true); $("#pDel").disabled = false; }
+};
 
 // ---------------------------------------------------------------- data
 function renderData() {

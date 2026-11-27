@@ -68,6 +68,14 @@ async function migrate(env) {
   await db.batch([
     ...[...REDEEMS, ...COUNTS, ...BOOTH_CFG].map((q) => db.prepare(q)),
     ...(hasN ? [] : [db.prepare("ALTER TABLE passports ADD COLUMN n INTEGER NOT NULL DEFAULT 0")]),
+    ...rebuildTotals(db),
+    db.prepare("INSERT INTO meta (k, v) VALUES ('schema', ?) ON CONFLICT (k) DO UPDATE SET v = excluded.v").bind(SCHEMA_V),
+  ]);
+}
+
+/** statements that recompute every running total from the real rows (put them in the same batch as the change) */
+export function rebuildTotals(db) {
+  return [
     db.prepare(`UPDATE passports SET n = (SELECT COUNT(*) FROM stamps s WHERE s.pid = passports.id AND s.booth IN (${IN_BOOTHS}))`).bind(...BOOTH_IDS),
     db.prepare("DELETE FROM counts"),
     db.prepare("DELETE FROM completed"),
@@ -78,8 +86,7 @@ async function migrate(env) {
     db.prepare(`INSERT INTO completed (pid, at) SELECT pid, MAX(at) FROM stamps WHERE booth IN (${IN_BOOTHS}) GROUP BY pid HAVING COUNT(*) >= ?`).bind(...BOOTH_IDS, REQUIRED),
     db.prepare("INSERT INTO counts (k, n) SELECT 'done', COUNT(*) FROM completed"),
     db.prepare("INSERT INTO counts (k, n) SELECT 'rd', COUNT(*) FROM redeems"),
-    db.prepare("INSERT INTO meta (k, v) VALUES ('schema', ?) ON CONFLICT (k) DO UPDATE SET v = excluded.v").bind(SCHEMA_V),
-  ]);
+  ];
 }
 
 export async function master(env) {

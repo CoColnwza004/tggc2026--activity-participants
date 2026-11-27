@@ -43,6 +43,7 @@
     <a href="#/dash" data-tab="dash">ภาพรวม</a>
     <a href="#/booths" data-tab="booths">บูธกิจกรรม</a>
     <a href="#/tickets" data-tab="tickets">ผู้ยื่นตั๋ว</a>
+    <a href="#/people" data-tab="people">ผู้ลงทะเบียน</a>
     <a href="#/data" data-tab="data">ข้อมูลระบบ</a>
   </nav>
 
@@ -106,6 +107,23 @@
     </div>
     <p class="sub" id="tInfo"></p>
     <div class="tlist" id="tlist"></div>
+  </main>
+
+  <!-- people: everyone who opened a passport; select and delete test entries -->
+  <main class="wrap" data-view="people" hidden>
+    <div class="bar-row">
+      <div><h2 class="h">ผู้ลงทะเบียน</h2><p class="sub">เลือกรายการที่เป็นการทดสอบแล้วกดลบ · ลบสมุด ตรา และตั๋วของคนนั้น ตัวเลขในแดชบอร์ดคำนวณใหม่ให้อัตโนมัติ · ย้อนกลับไม่ได้</p></div>
+      <input class="input search" id="pq" type="search" placeholder="ค้นชื่อ / โรงเรียน / เบอร์ / รหัส">
+    </div>
+    <div class="pbar">
+      <label class="chk"><input type="checkbox" id="pAll"><span id="pAllTxt">เลือกทั้งหมดที่แสดง</span></label>
+      <button class="btn ghost sm" type="button" id="pBefore">เลือกที่สมัครก่อนวันงาน</button>
+      <button class="btn ghost sm" type="button" id="pNone">ไม่เลือก</button>
+      <span class="spacer"></span>
+      <span class="sub" id="pInfo"></span>
+      <button class="btn red sm" type="button" id="pDel" disabled>ลบที่เลือก</button>
+    </div>
+    <div class="plist" id="plist"></div>
   </main>
 
   <!-- data -->

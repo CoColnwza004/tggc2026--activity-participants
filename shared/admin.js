@@ -2,7 +2,7 @@
 // Every handler expects an already-verified admin token (see staffFromReq in server.js).
 import { EVENT, BOOTH_IDS, REQUIRED } from "./event.js";
 import {
-  json, fail, body, master, readCounts, passportState, unredeemTicket, clean, boothConfig, dropBoothCache, BUCKET,
+  json, fail, body, master, readCounts, passportState, unredeemTicket, clean, boothConfig, dropBoothCache, BUCKET, rebuildTotals,
 } from "./server.js";
 
 const ROLE_TH = { student: "นักเรียน", teacher: "ครู", guest: "บุคคลทั่วไป" };
@@ -122,11 +122,40 @@ export async function adminApi(env, req, url, who) {
     await unredeemTicket(env, b.pid);
     return json({ ok: true, ...(await passportState(env, b.pid)), now: Date.now() });
   }
+  if (route === "GET /api/admin/passports") {
+    // everyone who opened a passport (newest first), to find and remove test entries
+    const { results } = await env.DB.prepare(
+      `SELECT p.id, p.name, p.school, p.role, p.phone, p.created, p.n, r.at AS redeemed
+         FROM passports p LEFT JOIN redeems r ON r.pid = p.id ORDER BY p.created DESC LIMIT 5000`
+    ).all();
+    return json({ ok: true, list: results, total: BOOTH_IDS.length, now: Date.now() });
+  }
+  if (route === "POST /api/admin/passports/delete") {
+    // delete chosen passports with their stamps and ticket, then recompute every total — one transaction
+    const b = await body(req);
+    const ids = [...new Set(Array.isArray(b.ids) ? b.ids : [])].filter((x) => /^G[0-9A-Z]{6}$/.test(x));
+    if (!ids.length || ids.length > 1000) return fail(400, "bad", "เลือกได้ 1–1,000 รายการต่อครั้ง");
+    const db = env.DB, stmts = [];
+    for (let i = 0; i < ids.length; i += 90) { // D1: at most 100 bound values per statement
+      const part = ids.slice(i, i + 90), q = part.map(() => "?").join(",");
+      stmts.push(
+        db.prepare(`DELETE FROM stamps WHERE pid IN (${q})`).bind(...part),
+        db.prepare(`DELETE FROM redeems WHERE pid IN (${q})`).bind(...part),
+        db.prepare(`DELETE FROM attempts WHERE k IN (${q})`).bind(...part.map((x) => "code:" + x)),
+        db.prepare(`DELETE FROM passports WHERE id IN (${q})`).bind(...part),
+      );
+    }
+    const res = await db.batch([...stmts, ...rebuildTotals(db)]);
+    AN = null; // dashboard cache
+    const deleted = res.filter((_, i) => i < stmts.length && i % 4 === 3).reduce((a, r) => a + r.meta.changes, 0);
+    return json({ ok: true, deleted, ...(await summary(env)), now: Date.now() });
+  }
   if (route === "POST /api/admin/reset") {
     // wipes test data before the real event: passports, stamps, tickets (booth details and logos stay)
     const b = await body(req);
     if (b.confirm !== "RESET") return fail(400, "confirm", "พิมพ์ RESET เพื่อยืนยัน");
     await env.DB.batch(["stamps", "redeems", "completed", "counts", "passports", "attempts"].map((t) => env.DB.prepare(`DELETE FROM ${t}`)));
+    AN = null;
     return json({ ok: true, ...(await summary(env)), now: Date.now() });
   }
 
