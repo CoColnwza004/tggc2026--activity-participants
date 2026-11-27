@@ -660,28 +660,52 @@ function watchRedeem(restart = true) {
 document.addEventListener("visibilitychange", () => { if (!document.hidden && view === "prize") watchRedeem(); });
 document.addEventListener("pointerdown", () => { if (view === "prize" && Date.now() - watchFrom > 2 * 60e3) watchRedeem(); }, { passive: true });
 
-// ---------------------------------------------------------------- share picture of the passport
-let shareFile = null, shareUrl = "";
+// ---------------------------------------------------------------- share pictures (collections)
+let shareFile = null, shareKind = "passport", shareMod = null;
+const shareCache = new Map(); // "kind:stamp count" → { url, file }
 async function openShare() {
   if (!S.pass) return;
-  openSheet(`<h2>รูปสมุดตราของฉัน</h2><div class="share-wait"><i class="spin"></i>กำลังสร้างรูป…</div>`);
+  openSheet(`<h2>รูปสมุดตราของฉัน</h2><div class="share-wait"><i class="spin"></i>กำลังเตรียม…</div>`);
+  try { shareMod = shareMod || (await import("./share.js")); } catch { $("#sheetBody").innerHTML = `<h2>รูปสมุดตราของฉัน</h2><p>โหลดไม่สำเร็จ ลองใหม่อีกครั้ง</p>`; return; }
+  const n = count(), cols = shareMod.COLLECTIONS, open = cols.filter((c) => shareMod.unlocked(c, n)).length;
+  if (!shareMod.unlocked(cols.find((c) => c.id === shareKind), n)) shareKind = "passport";
+  $("#sheetBody").innerHTML = `<h2>รูปสมุดตราของฉัน</h2>
+    <p class="hint">เลือกคอลเลกชัน · ปลดล็อกแล้ว <b>${open}/${cols.length}</b> แบบ${open < cols.length ? " · สะสมตราเพิ่มเพื่อปลดล็อกแบบใหม่" : " · ครบทุกแบบแล้ว!"}</p>
+    <div class="cols">${cols.map((c) => { const ok = shareMod.unlocked(c, n); return `<button type="button" class="col${ok ? "" : " locked"}${c.id === shareKind ? " on" : ""}" data-col="${c.id}"${ok ? "" : " disabled"}>
+      <span>${icon(ok ? c.icon : "lock")}</span><b>${c.th}</b><small>${ok ? c.en : `ปลดล็อกที่ ${c.need} ตรา`}</small></button>`; }).join("")}</div>
+    <div id="shareOut"></div>`;
+  renderShare();
+}
+async function renderShare() {
+  const out = $("#shareOut"); if (!out) return;
+  $$("#sheetBody .col").forEach((b) => b.classList.toggle("on", b.dataset.col === shareKind));
+  const key = shareKind + ":" + count();
+  out.innerHTML = `<div class="share-wait"><i class="spin"></i>กำลังสร้างรูป…</div>`;
   try {
-    const { shareCard } = await import("./share.js");
-    const blob = await shareCard({ pass: S.pass, stamps: S.stamps, booths: B, cover: coverFor(S.pass.id), total: TOTAL });
-    if (!blob) throw new Error("no image");
-    if (shareUrl) URL.revokeObjectURL(shareUrl);
-    shareUrl = URL.createObjectURL(blob);
-    shareFile = new File([blob], "tggc2026-geo-passport.jpg", { type: "image/jpeg" });
-    const canShare = !!(navigator.canShare && navigator.canShare({ files: [shareFile] }));
-    $("#sheetBody").innerHTML = `<h2>รูปสมุดตราของฉัน</h2>
-      <img class="share-img" src="${shareUrl}" alt="รูปสมุดสะสมตราของฉัน">
+    let it = shareCache.get(key);
+    if (!it) {
+      const kind = shareKind;
+      const blob = await shareMod.shareCard(kind, { pass: S.pass, stamps: S.stamps, booths: B, cover: coverFor(S.pass.id), total: TOTAL });
+      if (!blob) throw new Error("no image");
+      it = { url: URL.createObjectURL(blob), file: new File([blob], `tggc2026-${kind}.jpg`, { type: "image/jpeg" }) };
+      shareCache.set(key, it);
+      if (kind !== shareKind) return; // the user picked another one meanwhile
+    }
+    shareFile = it.file;
+    const canShare = !!(navigator.canShare && navigator.canShare({ files: [it.file] }));
+    out.innerHTML = `<img class="share-img" src="${it.url}" alt="รูปสมุดสะสมตราของฉัน">
       <div class="row">${canShare ? `<button class="btn" type="button" data-act="share-go">${icon("sparkle")}<span>แชร์ / บันทึกรูป</span></button>` : ""}
-        <a class="btn ${canShare ? "ghost" : ""}" href="${shareUrl}" download="tggc2026-geo-passport.jpg">${icon("download")}<span>ดาวน์โหลด</span></a></div>
+        <a class="btn ${canShare ? "ghost" : ""}" href="${it.url}" download="${it.file.name}">${icon("download")}<span>ดาวน์โหลด</span></a></div>
       <p class="hint center">iPhone/iPad: กดค้างที่รูป แล้วเลือก "บันทึกลงในรูปภาพ" · ขนาดพอดีสตอรี่ IG / Facebook</p>`;
   } catch {
-    $("#sheetBody").innerHTML = `<h2>รูปสมุดตราของฉัน</h2><p>สร้างรูปไม่สำเร็จ ลองใหม่อีกครั้ง หรือแคปหน้าจอสมุดตราแทน</p><button class="btn ghost" type="button" data-close>ปิด</button>`;
+    out.innerHTML = `<p>สร้างรูปไม่สำเร็จ ลองใหม่อีกครั้ง หรือแคปหน้าจอสมุดตราแทน</p>`;
   }
 }
+$("#sheet").addEventListener("click", (e) => {
+  const c = e.target.closest("[data-col]");
+  if (!c || c.disabled) return;
+  shareKind = c.dataset.col; sfx.tick(); renderShare();
+});
 async function shareGo() {
   if (!shareFile) return;
   try { await navigator.share({ files: [shareFile], title: "สมุดสะสมตรา TGGC 2026", text: `ฉันสะสมตราได้ ${count()}/${ALL} บูธ ที่งาน TGGC 2026! มาสะสมด้วยกัน ${EVENT.participantUrl}` }); }

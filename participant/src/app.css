@@ -350,6 +350,15 @@ a { color: var(--sea); }
 .ce-medal small { display: block; font-family: var(--f-tech); font-weight: 700; font-size: 11px; letter-spacing: .14em; color: #a46f00; }
 .ce-medal b { display: block; font-family: var(--f-display); font-size: 19px; color: var(--navy); line-height: 1.25; }
 .ce-medal span { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 4px; }
+.col { display: grid; justify-items: center; gap: 2px; padding: 10px 4px 8px; border-radius: 16px; border: 1.5px solid var(--line-strong); background: #fff; cursor: pointer; color: var(--navy); text-align: center; }
+.col span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: var(--tint); }
+.col b { font-family: var(--f-display); font-size: 13px; line-height: 1.2; }
+.col small { font-family: var(--f-tech); font-size: 9.5px; letter-spacing: .06em; color: var(--dim); line-height: 1.2; }
+.col.on { border-color: var(--navy); background: linear-gradient(160deg, #eaf6fb, #fff); box-shadow: 0 6px 16px rgba(7, 95, 152, .18); }
+.col.on span { background: linear-gradient(135deg, var(--sea), var(--mint)); color: #fff; }
+.col.locked { opacity: .55; cursor: not-allowed; }
+.col.locked small { font-family: var(--f-body); letter-spacing: 0; font-size: 10.5px; color: #a46f00; }
 .share-img { display: block; width: min(100%, 300px); margin: 10px auto 14px; border-radius: 18px; box-shadow: 0 14px 30px rgba(2, 27, 46, .25); }
 .share-wait { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px 0; color: var(--muted); }
 .share-wait .spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--line-strong); border-top-color: var(--sea); animation: spin .8s linear infinite; }
