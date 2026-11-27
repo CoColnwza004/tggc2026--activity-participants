@@ -31,8 +31,8 @@ body { font-family: "Kanit", "Noto Sans Thai", sans-serif; position: relative; }
   border-radius: 34px; padding: 4px; background: linear-gradient(140deg, #8fd4ff, var(--glow) 35%, var(--mint) 100%);
   box-shadow: 0 0 0 1px rgba(255,255,255,.6), 0 0 26px rgba(58,168,255,.75), 0 14px 34px rgba(4,44,74,.35); }
 .badge .in { width: 100%; height: 100%; border-radius: 30px; background: radial-gradient(circle at 50% 35%, #fff 55%, #eef7ff);
-  display: grid; place-items: center; padding: 16px; box-shadow: inset 0 0 18px rgba(58,168,255,.25); }
-.badge img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  display: grid; place-items: center; padding: 18px; overflow: hidden; box-shadow: inset 0 0 18px rgba(58,168,255,.25); }
+.badge img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
 .badge.wide { width: 236px; }
 .badge.num .in { background: radial-gradient(circle at 30% 20%, #1a8fcf, #075f98 45%, #063f6e); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0; }
 .badge.num small { font: 700 22px/1 "Chakra Petch", sans-serif; letter-spacing: .3em; margin-left: .3em; color: #8ff0c7; }
