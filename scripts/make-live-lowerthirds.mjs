@@ -2,11 +2,13 @@
 // and the participant site: white glass card with the blue glow frame, Kanit, navy → sea → mint.
 //   poster/live/lower-third-XX.png   1920×1080, transparent: drop on top of the video at 0,0 (OBS / vMix)
 //   poster/live/cut/lower-third-XX.png  the bar alone, trimmed (to place by hand)
+//   poster/live/canva/TGGC2026-lower-thirds.pptx  all 11 as slides, editable in Canva (Create a design → Import file)
 //   poster/live/preview.png          every bar over a sample frame, for checking
 // Logos in poster/live/logos/XX.png were cut out of the speaker cards.
 // Usage: node scripts/make-live-lowerthirds.mjs
 import { mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { layers, writePptx } from "./canva-layers.mjs";
 
 let pw;
 try { pw = await import("playwright"); }
@@ -16,6 +18,7 @@ const chromium = pw.chromium || pw.default.chromium;
 const root = fileURLToPath(new URL("../", import.meta.url));
 const out = root + "poster/live/";
 mkdirSync(out + "cut", { recursive: true });
+mkdirSync(out + "canva", { recursive: true });
 
 // name, then position lines (same order as the speaker cards)
 const PEOPLE = [
@@ -90,11 +93,11 @@ const bar = ([name, roles], i) => {
   const img = readFileSync(root + logo);
   const w = img.readUInt32BE(16), h = img.readUInt32BE(20);
   return `<div class="lt">
-  <div class="badge${w / h > 1.5 ? " wide" : ""}"><div class="in"><img src="${dataUri(logo)}" alt=""></div></div>
+  <div class="badge${w / h > 1.5 ? " wide" : ""}"><div class="in"><img data-img="${logo}" src="${dataUri(logo)}" alt=""></div></div>
   <div class="card"><div class="in">
-    <div class="top"><div class="tag"><img src="${mark}" alt=""><span>TGGC 2026</span><i></i><span>The 3rd Thailand Geography Genius Challenge</span></div>
-      <div class="name">${name}</div></div>
-    <div class="role">${roles.join("<br>")}</div>
+    <div class="top"><div class="tag"><img src="${mark}" alt=""><span data-t>TGGC 2026</span><i></i><span data-t>The 3rd Thailand Geography Genius Challenge</span></div>
+      <div class="name" data-t data-color="#075a96">${name}</div></div>
+    <div class="role"><span data-t>${roles.join("<br>")}</span></div>
   </div><div class="wire"><b></b><i></i></div></div>
 </div>`;
 };
@@ -105,7 +108,7 @@ const page = (body, bg = "") => `<!doctype html><html lang="th"><head><meta char
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
 const tmp = out + ".tmp.html";
-const shots = [];
+const shots = [], slides = [];
 for (const [i, p] of PEOPLE.entries()) {
   writeFileSync(tmp, page(bar(p, i)));
   const tab = await ctx.newPage();
@@ -118,6 +121,8 @@ for (const [i, p] of PEOPLE.entries()) {
     return { x: a.left, y: a.top, w: Math.max(a.right, b.right) - a.left, h: a.height }; });
   const m = 36, x = Math.max(0, Math.floor(r.x - m)), y = Math.max(0, Math.floor(r.y - m));
   await tab.screenshot({ path: out + "cut/" + f, omitBackground: true, clip: { x, y, width: Math.ceil(r.w + 2 * m), height: Math.min(1080 - y, Math.ceil(r.h + 2 * m)) } });
+  const bg = out + `.bg-${pad(i + 1)}.png`;
+  slides.push({ name: p[0], ...(await layers(tab, bg, { transparent: true })) });
   await tab.close();
   shots.push(f);
   console.log(f, "·", p[0]);
@@ -134,5 +139,6 @@ await tab.setViewportSize({ width: 616 * 3 + 88, height: 400 });
 await tab.goto(pathToFileURL(tmp).href);
 await tab.screenshot({ path: out + "preview.png", fullPage: true });
 await browser.close();
-rmSync(tmp);
+writePptx(slides, out + "canva/TGGC2026-lower-thirds.pptx", out + ".spec.json");
+for (const f of [tmp, out + ".spec.json", ...slides.map((s) => s.bg)]) rmSync(f);
 console.log("preview.png");
