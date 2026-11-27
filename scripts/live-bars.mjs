@@ -55,17 +55,16 @@ body { font-family: "Kanit", "Noto Sans Thai", sans-serif; position: relative; }
   color: var(--teal); text-transform: uppercase; white-space: nowrap; }
 .tag img { width: 30px; height: 30px; }
 .tag i { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 8px var(--mint); }
-.award { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+.award { display: flex; align-items: center; gap: 16px; margin: 2px 0 8px; }
 .award b { padding: 6px 22px 8px; border-radius: 999px; font-size: 30px; line-height: 1.25; font-weight: 700; white-space: nowrap;
   color: #3b2600; background: linear-gradient(135deg, #ffe9a3, #ffd166 45%, #f0a925); box-shadow: 0 4px 14px rgba(240,169,37,.35), inset 0 1px 0 rgba(255,255,255,.7); }
 .award.silver b { color: #1f3242; background: linear-gradient(135deg, #ffffff, #dbe5ee 45%, #a7b8c7); box-shadow: 0 4px 14px rgba(120,140,160,.35), inset 0 1px 0 #fff; }
 .award.bronze b { color: #3d1d05; background: linear-gradient(135deg, #ffd8b0, #e8a56a 45%, #b8743f); box-shadow: 0 4px 14px rgba(184,116,63,.35), inset 0 1px 0 rgba(255,255,255,.6); }
 .award.honor b { color: #fff; background: linear-gradient(135deg, #3fd6a6, #15a8a0 50%, #0a7fa8); box-shadow: 0 4px 14px rgba(21,168,160,.35), inset 0 1px 0 rgba(255,255,255,.4); }
-.award span { font-size: 24px; font-weight: 500; color: var(--navy); white-space: nowrap; }
+.award span { font-size: 28px; font-weight: 500; color: var(--navy); white-space: nowrap; }
 .name { margin-top: 6px; font-weight: 700; font-size: 62px; line-height: 1.32; color: var(--deep); white-space: nowrap; letter-spacing: .005em;
   background: linear-gradient(180deg, #0a5d9c, #063f6e); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-.award + .name { margin-top: 2px; }
-.role { position: relative; z-index: 1; padding: 13px 48px 15px 60px; color: #fff; font-weight: 500; font-size: 30px; line-height: 1.42; white-space: nowrap;
+.role { position: relative; z-index: 1; padding: 13px 104px 15px 60px; color: #fff; font-weight: 500; font-size: 30px; line-height: 1.42; white-space: nowrap;
   background: linear-gradient(95deg, var(--deep) 0%, var(--navy) 38%, var(--sea) 72%, var(--teal) 100%); }
 .role::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, var(--mint), #8fe9ff 50%, var(--gold)); }
 .role::after { content: ""; position: absolute; right: 22px; bottom: 14px; width: 54px; height: 10px;
@@ -84,7 +83,15 @@ export function logoBadge(file) {
 }
 export const numBadge = (no) => `<div class="badge num"><div class="in"><small data-t>TEAM</small><b data-t>${pad(no)}</b></div></div>`;
 const MEDAL = { gold: ["#fff4c2", "#ffd166", "#d9931a", "#7a4b00"], silver: ["#ffffff", "#dfe7ef", "#9fb0c0", "#3a4d5e"],
-  bronze: ["#ffe1c2", "#e8a56a", "#a8642f", "#4a2408"], honor: ["#c9fbe9", "#3fd6a6", "#0f8f8a", "#03433f"] };
+  bronze: ["#ffe1c2", "#e8a56a", "#a8642f", "#4a2408"], honor: ["#c9fbe9", "#3fd6a6", "#0f8f8a", "#03433f"],
+  blue: ["#d6f1ff", "#5fc3f5", "#0a7fc0", "#032f56"] };
+// navy tile with a white line icon (talks)
+const ICONS = {
+  mic: `<g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><rect x="47" y="18" width="34" height="58" rx="17"/><path d="M34 60a30 30 0 0 0 60 0M64 90v18M48 108h32"/></g>`,
+  pin: `<g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M64 112s-34-30-34-56a34 34 0 0 1 68 0c0 26-34 56-34 56z"/><circle cx="64" cy="56" r="12"/></g>`,
+};
+export const iconBadge = (k) => `<div class="badge num"><div class="in"><svg viewBox="0 0 128 128" width="112" height="112" aria-hidden="true">${ICONS[k]}<circle cx="100" cy="24" r="6" fill="#8ff0c7"/></svg></div></div>`;
+
 export function medalBadge(tier) {
   const [a, b, c, d] = MEDAL[tier];
   return `<div class="badge medal"><div class="in"><svg viewBox="0 0 128 128" aria-hidden="true">
@@ -94,14 +101,14 @@ export function medalBadge(tier) {
   </svg></div></div>`;
 }
 
-// one bar: badge + card (tag line, optional award pill, big name, strip lines)
+// one bar: badge + card (tag line, big name, optional award row: gold pill + note, strip lines)
 export function card({ badge, tag, award, name, lines }) {
   const tagHtml = tag.map((t, i) => `${i ? "<i></i>" : ""}<span data-t>${esc(t)}</span>`).join("");
-  const awardHtml = award ? `<div class="award ${award.tier}"><b data-t>${esc(award.title)}</b>${award.note ? `<span data-t>${esc(award.note)}</span>` : ""}</div>` : "";
+  const awardHtml = award ? `<div class="award ${award.tier || ""}"><b data-t>${esc(award.pill)}</b>${award.note ? `<span data-t>${esc(award.note)}</span>` : ""}</div>` : "";
   return `<div class="lt">${badge}
   <div class="card"><div class="in">
-    <div class="top"><div class="tag"><img src="${mark}" alt="">${tagHtml}</div>${awardHtml}
-      <div class="name" data-t data-color="#075a96">${esc(name)}</div></div>
+    <div class="top"><div class="tag"><img src="${mark}" alt="">${tagHtml}</div>
+      <div class="name" data-t data-color="#075a96">${esc(name)}</div>${awardHtml}</div>
     <div class="role"><span data-t>${lines.map(esc).join("<br>")}</span></div>
   </div><div class="wire"><b></b><i></i></div></div>
 </div>`;
