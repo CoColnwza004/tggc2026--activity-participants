@@ -175,7 +175,7 @@ function showBooth(id) {
   if (id === EVENT.prizePoint.id) {
     openSheet(`<div class="bs-head"><div class="ghost-stamp" style="color:#b98510;border-color:#e6c873">${icon("gift")}</div><div><span class="eyebrow">PRIZE POINT</span><h2>${esc(b.th)}</h2></div></div>
       <div class="meta"><span>${icon("place")}${esc(b.place)}</span><span>${icon("sparkle")}สะสมตราครบ ${TOTAL} บูธ แล้วนำตั๋วมาให้เจ้าหน้าที่สแกน จากนั้น${esc(EVENT.raffle.slip)}จับฉลาก</span></div>
-      <a class="btn big" href="#/prize" data-close>ไปหน้าตั๋วลุ้นรางวัล</a>`);
+      <div class="row"><a class="btn ghost" href="#/program/map" data-close data-focus="${EVENT.prizePoint.id}">${icon("map")}<span>ดูบนผัง</span></a><a class="btn" href="#/prize" data-close>${icon("gift")}<span>ตั๋วลุ้นรางวัล</span></a></div>`);
     return;
   }
   const got = S.stamps[id];
@@ -461,6 +461,7 @@ addEventListener("hashchange", route);
 
 function render() {
   renderTop();
+  setTimeout(doneNotice, 0);
   if (view === "home") renderHome();
   if (view === "passport") renderPassport();
   if (view === "prize") renderPrize();
@@ -609,7 +610,7 @@ function celebrate(b, offline = false) {
   $(".ce-splash").style.setProperty("--c", b.color);
   $("#ceKicker").textContent = (offline ? "ได้รับตรา! (จะซิงก์เมื่อมีสัญญาณ)" : "ได้รับตราประทับ!") + ` · บูธ ${b.no}`;
   $("#ceTitle").textContent = b.th;
-  $("#ceSub").textContent = n >= TOTAL ? `ครบแล้ว! รับตั๋วลุ้นรางวัล แล้วไปยื่นที่${EVENT.prizePoint.name}` : `สะสมแล้ว ${n} จาก ${ALL} ตรา · อีก ${TOTAL - n} ตราได้ตั๋วลุ้นรางวัล`;
+  $("#ceSub").textContent = n >= TOTAL ? `ครบแล้ว! รับตั๋วลุ้นรางวัล แล้วไปยื่นที่${EVENT.prizePoint.name} ${EVENT.prizePoint.place}` : `สะสมแล้ว ${n} จาก ${ALL} ตรา · อีก ${TOTAL - n} ตราได้ตั๋วลุ้นรางวัล`;
   $("#ceDots").innerHTML = B.map((x) => `<i class="${S.stamps[x.id] ? "on" : ""} ${x.id === b.id ? "new" : ""}" style="--c:${x.color}"></i>`).join("");
   $("#ceGo").innerHTML = n >= TOTAL ? `${icon("gift")}<span>รับตั๋วลุ้นรางวัล</span>` : `<span>ดูสมุดตรา</span>`;
   $("#ceMore").hidden = n >= TOTAL;
@@ -633,6 +634,23 @@ function celebrate(b, offline = false) {
 }
 $("#ceGo").onclick = () => { $("#celebrate").hidden = true; location.hash = count() >= TOTAL ? "#/prize" : "#/passport"; };
 $("#ceMore").onclick = () => { $("#celebrate").hidden = true; openScanner(); };
+
+// ---------------------------------------------------------------- "you collected every booth" notice
+// shown once on this phone as soon as the passport is complete (after the stamp celebration is closed)
+function doneNotice() {
+  if (!S.pass || S.doneSeen || S.redeem || count() < TOTAL) return;
+  if (!$("#celebrate").hidden || !$("#sheet").hidden || !$("#scanner").hidden) return;
+  S.doneSeen = true; save();
+  const P = EVENT.prizePoint;
+  openSheet(`<div class="done-note"><span class="dn-ic">${icon("gift")}</span>
+    <small>แจ้งเตือน</small>
+    <h2>สะสมครบ ${ALL} บูธแล้ว!</h2>
+    <p class="dn-lead">คุณได้รับ<b>ตั๋วลุ้นรางวัล</b>แล้ว นำไปยื่นที่เคาน์เตอร์ได้เลย</p>
+    <div class="dn-where">${icon("place")}<div><small>ไปที่</small><b>${esc(P.name)}</b><span>${esc(P.place)}</span></div></div>
+    <ol class="dn-steps"><li>เปิด<b>ตั๋วลุ้นรางวัล</b>ในเว็บนี้</li><li>ให้เจ้าหน้าที่สแกน QR บนตั๋ว</li><li>${esc(EVENT.raffle.slip)}</li></ol>
+    <div class="row"><a class="btn ghost" href="#/program/map" data-close data-focus="${P.id}">${icon("map")}<span>ดูบนผัง</span></a><a class="btn green" href="#/prize" data-close>${icon("gift")}<span>เปิดตั๋ว</span></a></div></div>`);
+  sfx.win(); buzz([60, 40, 60, 40, 160]);
+}
 
 // ---------------------------------------------------------------- waiting at the prize counter
 // every 5 s for the first 2 minutes on this page (the moment staff scan the ticket), then every 20 s,
@@ -739,7 +757,7 @@ document.addEventListener("click", (e) => {
   const bt = e.target.closest("[data-booth]");
   if (bt) {
     e.preventDefault();
-    if (bt.closest("#mapLegend") && bt.dataset.booth !== EVENT.prizePoint.id) { focusBooth(bt.dataset.booth); return; }
+    if (bt.closest("#mapLegend")) { focusBooth(bt.dataset.booth); return; }
     showBooth(bt.dataset.booth);
     return;
   }

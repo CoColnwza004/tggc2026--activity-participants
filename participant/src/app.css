@@ -631,6 +631,10 @@ a { color: var(--sea); }
 .m-pin .ring { fill: var(--c); stroke: #fff; stroke-width: 3; }
 .m-pin text { font-family: var(--f-tech); font-size: 13px; font-weight: 700; fill: #fff; }
 .m-pin .tick { display: none; }
+.m-prize .ring { fill: #ffd166; stroke: #c9971c; stroke-width: 3; }
+.m-prize .halo { fill: #ffd166; opacity: .45; transform-box: fill-box; transform-origin: center; animation: prizePulse 1.8s ease-out infinite; }
+@keyframes prizePulse { from { transform: scale(.7); opacity: .6; } to { transform: scale(1.5); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .m-prize .halo { animation: none; } }
 .m-pin.got .ring { fill: #2cc394; }
 .m-pin.got .halo { fill: #2cc394; opacity: .28; }
 .m-pin.got .tick { display: inline; }
@@ -943,3 +947,20 @@ html.lock, html.lock body { overflow: hidden; }
   .hero-geos { width: 250px; }
 }
 .tl-note { margin: 10px 0 0; font-size: 12.5px; color: var(--dim); text-align: center; }
+
+/* ---------- "collected every booth" notice ---------- */
+.done-note { text-align: center; padding-top: 4px; }
+.done-note .dn-ic { display: inline-grid; place-items: center; width: 76px; height: 76px; border-radius: 24px; color: #5a3d00; background: linear-gradient(135deg, #ffd166, #f2b200); box-shadow: 0 12px 26px rgba(242, 178, 0, .35); animation: dnPop .7s cubic-bezier(.2, 1.6, .4, 1) both; }
+.done-note .dn-ic .ico { width: 38px; height: 38px; }
+@keyframes dnPop { from { transform: scale(.3) rotate(-20deg); opacity: 0; } }
+.done-note > small { display: block; margin-top: 12px; font-family: var(--f-tech); letter-spacing: .14em; color: var(--teal); font-size: 12px; }
+.done-note h2 { margin: 2px 0 6px; font-size: 28px; }
+.dn-lead { margin: 0 0 12px; color: var(--muted); }
+.dn-where { display: flex; gap: 12px; align-items: center; text-align: left; padding: 14px; border-radius: 18px; background: #fff8e1; border: 1.5px solid #f2cf6b; }
+.dn-where > .ico { flex: none; width: 30px; height: 30px; color: #c9971c; }
+.dn-where div { display: grid; }
+.dn-where small { font-size: 12px; color: #a46f00; }
+.dn-where b { font-family: var(--f-display); font-size: 19px; color: var(--ink); }
+.dn-where span { font-size: 15px; color: var(--ink); }
+.dn-steps { margin: 12px 0 14px; padding-left: 22px; text-align: left; font-size: 14.5px; line-height: 1.7; }
+@media (prefers-reduced-motion: reduce) { .done-note .dn-ic { animation: none; } }

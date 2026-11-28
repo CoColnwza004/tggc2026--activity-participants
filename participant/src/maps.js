@@ -40,6 +40,14 @@ export const BOOTH_XY = {
   23: [876, 462],
 };
 
+// prize counter: beside booth 22
+export const PRIZE_XY = [130, 186];
+function prizePin() {
+  const [x, y] = PRIZE_XY;
+  return `<g class="m-pin m-prize" data-booth="${EVENT.prizePoint.id}" data-dot="${EVENT.prizePoint.id}" role="button" tabindex="0" aria-label="${esc(EVENT.prizePoint.th)} (${esc(EVENT.prizePoint.place)})" transform="translate(${x} ${y})">
+    <circle class="halo" r="22"/><circle class="ring" r="15"/><path d="M0-8.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L0 4.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" fill="#5a3d00"/></g>`;
+}
+
 function pin(b, got) {
   const [x, y] = BOOTH_XY[b.no] || [0, 0];
   return `<g class="m-pin${got ? " got" : ""}" data-booth="${b.id}" data-dot="${b.id}" role="button" tabindex="0" aria-label="บูธ ${b.no} ${esc(b.th)}${got ? " (ได้ตราแล้ว)" : ""}" style="--c:${b.color}" transform="translate(${x} ${y})">
@@ -105,11 +113,12 @@ export function boothMapSVG(stamps = {}) {
     <g transform="translate(36 72)"><circle r="11" fill="#075f98"/><text class="m-k w" y="4" text-anchor="middle">1</text></g><text class="m-k" x="56" y="77">บูธ (แตะเพื่อดูรายละเอียด)</text>
     <g transform="translate(36 102)"><circle r="11" fill="#2cc394"/><path d="M-5 0l3.5 3.5 6.5-7" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></g><text class="m-k" x="56" y="107">ได้ตราแล้ว</text>
     <rect x="330" y="60" width="34" height="22" rx="7" fill="url(#mgZone)" stroke="#f2cf6b"/><text class="m-k" x="374" y="77">โซนบูธ</text>
+    <g transform="translate(460 72)"><circle r="11" fill="#ffd166" stroke="#c9971c" stroke-width="2"/><path d="M0-6l1.8 3.7 4.1.6-3 2.9.7 4.1L0 3.4l-3.7 1.9.7-4.1-3-2.9 4.1-.6z" fill="#5a3d00"/></g><text class="m-k" x="478" y="77">แลกรางวัล</text>
     <path d="M330 102h34" stroke="#f2b200" stroke-width="8" stroke-linecap="round"/><text class="m-k" x="374" y="107">ทางเข้า / ทางไปท้องฟ้าจำลอง</text>
     <g transform="translate(600 62)" aria-hidden="true"><circle r="22" fill="#e9f6f8"/><path d="M0-17l6 17H-6z" fill="#d93d4a" transform="rotate(-90)"/><path d="M0 17l6-17H-6z" fill="#86a4b1" transform="rotate(-90)"/><text class="m-k b" x="-38" y="5" text-anchor="middle">N</text></g>
   </g>
 
-  ${B.map((b) => pin(b, got(b.no))).join("")}
+  ${B.map((b) => pin(b, got(b.no))).join("")}${prizePin()}
 </svg>`;
 }
 
